@@ -13,16 +13,16 @@ var walls = new Array(
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
   0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 );
 
 function startGame() {
 
-  CubeProbe = new ProbeComponent(20, 20, "#C59D0D", 20, 300);
+  CubeProbe = new ProbeComponent(16, 16, "#C59D0D", 20, 300);
   // CubeProbe.angle = Math.PI / 2;
 
   for (x in walls) {
@@ -95,7 +95,7 @@ function ProbeComponent(width, height, color, x, y, type) {
     this.y -= this.speed * Math.cos(this.angle);
   }
   this.crashWith = function(otherobj) {
-    var cubewidth = this.width/1.414214*Math.cos(Math.PI/4-Math.abs(this.angle%(Math.PI/2))) +1;
+    var cubewidth = this.width/1.414214*Math.cos(Math.PI/4-Math.abs(this.angle%(Math.PI/2)));
     var myleft = this.x - cubewidth;
     var myright = this.x + cubewidth;
     var mytop = this.y - cubewidth;
@@ -110,10 +110,12 @@ function ProbeComponent(width, height, color, x, y, type) {
       crash = false;
     }
     if(crash){
-      if(Math.abs(this.x-otherobj.x)>Math.abs(this.y-otherobj.y)) {
-        this.x += 5*bool2sgn(this.x>otherobj.x);
-      }else{
-        this.y += 5*bool2sgn(this.y>otherobj.y);
+      this.speed *= 0.5;
+      if(Math.abs(this.x-otherobj.x)>=Math.abs(this.y-otherobj.y)) {
+        this.x += 2*bool2sgn(this.x,otherobj.x);
+      }
+      if(Math.abs(this.x-otherobj.x)<=Math.abs(this.y-otherobj.y)) {
+        this.y += 2*bool2sgn(this.y,otherobj.y);
       }
     }
     return crash;
@@ -122,16 +124,18 @@ function ProbeComponent(width, height, color, x, y, type) {
     var relaxangle = this.angle % (Math.PI/2);
     var relax;
     if(relaxangle >0) {
-      if(relaxangle < Math.PI/4) {relax = -3} else {relax = 3}
+      if(relaxangle < Math.PI/4) {relax = -1} else {relax = 1}
     } else {
-      if(relaxangle < -Math.PI/4) {relax = -3} else {relax = 3}
+      if(relaxangle < -Math.PI/4) {relax = -1} else {relax = 1}
     }
-    this.angle += relax * Math.PI / 180;
+    this.angle += 2*relax * Math.PI / 180;
   }
 }
 
-function bool2sgn(flag) {
-  if(flag){return 1}else{return -1}
+function bool2sgn(a,b) {
+  if(a>b){return 1}
+  if(a==b){return 0}
+  if(a<b){return -1}
 }
 
 
@@ -162,10 +166,10 @@ function updateGameArea() {
   CubeProbe.moveAngle = 0;
   CubeProbe.speed = 0;
 
-  if (myGameArea.keys && myGameArea.keys[37]) {CubeProbe.moveAngle = -5; }
-  if (myGameArea.keys && myGameArea.keys[39]) {CubeProbe.moveAngle = 5; }
-  if (myGameArea.keys && myGameArea.keys[38]) {CubeProbe.speed = 2; }
-  if (myGameArea.keys && myGameArea.keys[40]) {CubeProbe.speed = -2; }
+  if (myGameArea.keys && myGameArea.keys[37]) {CubeProbe.moveAngle = -4; }
+  if (myGameArea.keys && myGameArea.keys[39]) {CubeProbe.moveAngle = 4; }
+  if (myGameArea.keys && myGameArea.keys[38]) {CubeProbe.speed = 1.5; }
+  if (myGameArea.keys && myGameArea.keys[40]) {CubeProbe.speed = -1.5; }
 
   var crashflag = false;
   for (x in walls) { if(walls[x]==1) {
