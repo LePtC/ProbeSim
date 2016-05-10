@@ -1,13 +1,37 @@
 
 var CubeProbe;
-var myObstacle;
+var CubeWalls = new Array(); // block size 25^2, grid 24*16, size 600*400
+var walls = new Array(
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1
+);
 
 function startGame() {
 
   CubeProbe = new ProbeComponent(20, 20, "#C59D0D", 20, 300);
   // CubeProbe.angle = Math.PI / 2;
 
-  myObstacle = new WallComponent(10, 200, "green", 100, 120);
+  for (x in walls) {
+    var j = x%24; // i,j start from 0
+    var i = (x-j)/24;
+    if(walls[x]==1) {
+      CubeWalls[x] = new WallComponent(25, 25, "green", 212.5+25*j, 12.5+25*i);
+    }
+  }
 
   myGameArea.start();
 }
@@ -91,11 +115,22 @@ function ProbeComponent(width, height, color, x, y, type) {
     }
     return crash;
   }
+  this.relaxAng = function() {
+    var relaxangle = this.angle % (Math.PI/2);
+    var relax;
+    if(relaxangle >0) {
+      if(relaxangle < Math.PI/4) {relax = -3} else {relax = 3}
+    } else {
+      if(relaxangle < -Math.PI/4) {relax = -3} else {relax = 3}
+    }
+    this.angle += relax * Math.PI / 180;
+  }
 }
 
 function bool2sgn(flag) {
   if(flag){return 1}else{return -1}
 }
+
 
 
 function WallComponent(width, height, color, x, y, type) {
@@ -117,7 +152,9 @@ function WallComponent(width, height, color, x, y, type) {
 function updateGameArea() {
 
   myGameArea.clear();
-  myObstacle.update();
+  for (x in walls) { if(walls[x]==1) {
+    CubeWalls[x].update();
+  }}
 
   CubeProbe.moveAngle = 0;
   CubeProbe.speed = 0;
@@ -127,18 +164,14 @@ function updateGameArea() {
   if (myGameArea.keys && myGameArea.keys[38]) {CubeProbe.speed = 2; }
   if (myGameArea.keys && myGameArea.keys[40]) {CubeProbe.speed = -2; }
 
-  if (CubeProbe.crashWith(myObstacle)) {
-    var relaxangle = CubeProbe.angle % (Math.PI/2);
-    var relax;
-    if(relaxangle >0) {
-      if(relaxangle < Math.PI/4) {relax = -3} else {relax = 3}
-    } else {
-      if(relaxangle < -Math.PI/4) {relax = -3} else {relax = 3}
-    }
-    CubeProbe.angle += relax * Math.PI / 180;
-  }
+  var crashflag = false;
+  for (x in walls) { if(walls[x]==1) {
+    crashflag = crashflag || CubeProbe.crashWith(CubeWalls[x]);
+  }}
+  if (crashflag) { CubeProbe.relaxAng() }
 
   CubeProbe.newPos();
   CubeProbe.update();
 
 }
+
