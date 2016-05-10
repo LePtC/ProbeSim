@@ -23,7 +23,7 @@ var myGameArea = {
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 20); // every 20th millisecond (50 frames per second)
+    this.interval = setInterval(updateGameArea, 15); // every 15th millisecond (67 frames per second)
 
     window.addEventListener('keydown', function (e) {
       e.preventDefault();
@@ -71,7 +71,7 @@ function ProbeComponent(width, height, color, x, y, type) {
     this.y -= this.speed * Math.cos(this.angle);
   }
   this.crashWith = function(otherobj) {
-    var cubewidth = this.width/1.414214*Math.cos(Math.PI/4-this.angle);
+    var cubewidth = this.width/1.414214*Math.cos(Math.PI/4-Math.abs(this.angle%(Math.PI/2))) +1;
     var myleft = this.x - cubewidth;
     var myright = this.x + cubewidth;
     var mytop = this.y - cubewidth;
@@ -81,14 +81,21 @@ function ProbeComponent(width, height, color, x, y, type) {
     var othertop = otherobj.y - (otherobj.height)/2;
     var otherbottom = otherobj.y + (otherobj.height)/2;
     var crash = true;
-    if ((mybottom < othertop) || (mytop > otherbottom) ||
+    if ((mybottom < othertop) || (mytop > otherbottom) || // y axis heading downward
         (myright < otherleft) || (myleft > otherright)) {
       crash = false;
+    }
+    if(crash){
+      this.x += 2*bool2sgn(this.x>otherobj.x);
+      this.y += 2*bool2sgn(this.y>otherobj.y);
     }
     return crash;
   }
 }
 
+function bool2sgn(flag) {
+  if(flag){return 1}else{return -1}
+}
 
 
 function WallComponent(width, height, color, x, y, type) {
@@ -121,8 +128,6 @@ function updateGameArea() {
   if (myGameArea.keys && myGameArea.keys[40]) {CubeProbe.speed = -2; }
 
   if (CubeProbe.crashWith(myObstacle)) {
-    CubeProbe.speed = CubeProbe.speed * (-1);
-
     var relaxangle = CubeProbe.angle % (Math.PI/2);
     var relax;
     if(relaxangle >0) {
