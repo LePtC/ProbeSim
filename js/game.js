@@ -30,6 +30,8 @@ function startGame() {
     var i = (x-j)/24;
     if(walls[x]==1) {
       CubeWalls[x] = new WallComponent(25, 25, "green", 212.5+25*j, 12.5+25*i);
+    }else{
+      CubeWalls[x] = new WallComponent(25, 25, "rgba(0,0,0,1)", 212.5+25*j, 12.5+25*i);
     }
   }
 
@@ -147,9 +149,10 @@ function WallComponent(width, height, color, x, y, type) {
   this.height = height;
   this.x = x;
   this.y = y;
-  this.update = function() {
+  this.update = function(getalpha) {
     ctx = myGameArea.context;
     ctx.fillStyle = color;
+    ctx.globalAlpha = getalpha;
     ctx.fillRect(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
   }
 }
@@ -159,9 +162,15 @@ function WallComponent(width, height, color, x, y, type) {
 function updateGameArea() {
 
   myGameArea.clear();
-  for (x in walls) { if(walls[x]==1) {
-    CubeWalls[x].update();
-  }}
+  for (x in walls) {
+    if(walls[x]==1) {
+      CubeWalls[x].update(1);
+    }
+    if(walls[x]==0) {
+      var distance = Math.sqrt(Math.pow(CubeWalls[x].x-CubeProbe.x,2) + Math.pow(CubeWalls[x].y-CubeProbe.y,2));
+      CubeWalls[x].update(distance/600);
+    }
+  }
 
   CubeProbe.moveAngle = 0;
   CubeProbe.speed = 0;
