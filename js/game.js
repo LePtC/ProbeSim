@@ -159,6 +159,8 @@ function WallComponent(width, height, color, x, y, type) {
 
 
 
+var maxdistance = 300; // 最远光照
+
 function updateGameArea() {
 
   myGameArea.clear();
@@ -168,7 +170,8 @@ function updateGameArea() {
     }
     if(walls[x]==0) {
       var distance = Math.sqrt(Math.pow(CubeWalls[x].x-CubeProbe.x,2) + Math.pow(CubeWalls[x].y-CubeProbe.y,2));
-      CubeWalls[x].update(distance/600);
+      if(distance>maxdistance){distance=maxdistance}
+      CubeWalls[x].update(distance/maxdistance);
     }
   }
 
