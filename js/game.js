@@ -69,8 +69,8 @@ function startGame() {
   CubeProbe = new ProbeComponent(15, 15, "#C59D0D", 150, 300);
   // CubeProbe.angle = Math.PI / 2;
 
-  ShootFoe = new FoeComponent(5, "#222", 500, 300);
-  CreepFoe = new FoeComponent(5, "red", 500, 200);
+  ShootFoe = new FoeComponent(7, "#222", 500, 300);
+  CreepFoe = new FoeComponent(7, "red", 500, 200);
 
   myGameArea.start();
 }
@@ -227,7 +227,7 @@ function FoeComponent(radius, color, x, y, type) {
       this.x += speed * angledx/dr;
       this.y += speed * angledy/dr;
     } else {
-      if ((myGameArea.frameNo / 50) % 1 == 0) { // 每 1 秒随机改变方向
+      if (myGameArea.frameNo % 50 == 0) { // 每 1 秒随机改变方向
         if (Math.random()>0.2) {
           this.randomang += 10*Math.random();
         }
@@ -285,9 +285,9 @@ function updateGameArea() {
     else if(dyp<-4) {CubeProbe.speed = -1.5; }
   }
 
-  if (myGameArea.keys && myGameArea.keys[37]) {CubeProbe.moveAngle = -4; }
+  if (myGameArea.keys && myGameArea.keys[37]) {CubeProbe.moveAngle = -4; } // left
   if (myGameArea.keys && myGameArea.keys[39]) {CubeProbe.moveAngle = 4; }
-  if (myGameArea.keys && myGameArea.keys[38]) {CubeProbe.speed = 1.5; }
+  if (myGameArea.keys && myGameArea.keys[38]) {CubeProbe.speed = 1.5; } // up
   if (myGameArea.keys && myGameArea.keys[40]) {CubeProbe.speed = -1.5; }
 
   var crashflag = false;

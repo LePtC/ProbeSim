@@ -4,7 +4,9 @@
 
 ###2016.05.08
 
-在 [w3schools](http://www.w3schools.com/games/default.asp) 学习 Javascript 游戏开发，发现可以看懂，于是想开发一个类似 [Duskers](http://search.bilibili.com/all?keyword=duskers) 的游戏作为练习。游戏属于解谜类型，操作方式类似命令行（我大概只能做到组合键…），控制若干个 Probe 探索未知的地图，思考如何探测并杀死敌人，搜集模块使 Probe 升级新功能等等。
+本来是为了填之前 [2048 Physics](http://leptc.github.io/2048physics/) 的坑，就在 [w3schools](http://www.w3schools.com/games/default.asp) 学习 Javascript 游戏开发，发现很容易就看懂了。然后觉得 2048 这游戏没什么意思，想起之前一直对 [Duskers](http://search.bilibili.com/all?keyword=duskers) 这个游戏的玩法很感兴趣，于是决定自己开发这个游戏…（← 旧坑不填又开新坑 (╯‵□′)╯︵┻┻）
+
+游戏属于解谜类型，操作方式类似命令行（我大概只能做到组合键…），控制若干个 Probe 探索未知的地图，思考如何探测并杀死敌人，搜集模块使 Probe 升级新功能等等。
 
 
 ###2016.05.10.v1
