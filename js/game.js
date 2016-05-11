@@ -80,7 +80,7 @@ var myGameArea = {
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 15); // 每 15th 毫秒 (67 fps)
+    this.interval = setInterval(updateGameArea, 20); // 每 20th 毫秒 (50 fps)
 
     window.addEventListener('keydown', function (e) {
       e.preventDefault();
@@ -222,7 +222,7 @@ function lightlevel(ax,ay,ang,bx,by) {
   var distance = getr(bx-ax,by-ay);
   var slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,distance);
   slant = Math.pow(0.5*(1-slant),3)
-  if(distance>maxdistance){distance=maxdistance} //  || iswallinline(ax,ay,bx,by)
+  if(distance>maxdistance || iswallinline(ax,ay,bx,by)){distance=maxdistance} //
   return(1-(1-distance/maxdistance)*slant)
 }
 
@@ -231,8 +231,8 @@ function lightlevel(ax,ay,ang,bx,by) {
 function iswallinline(ax,ay,bx,by) {
   var len = getr(by-ay,bx-ax);
   var total = 2*Math.round(len/wd);
-  var dx = (bx-ax)/total*wd;
-  var dy = (by-ay)/total*wd;
+  var dx = (bx-ax)/total;
+  var dy = (by-ay)/total;
   // var n = 0;
   // while(!iswall(ax+n*dx,ay+n*dy) && n<total) {n++;}
   // return(n/total)
@@ -244,8 +244,8 @@ function iswallinline(ax,ay,bx,by) {
 }
 
 function iswall(x,y) {
-  var i = Math.round((x-200)/wd);
-  var j = Math.round(y/wd);
+  var j = Math.round((x-200)/wd);
+  var i = Math.round(y/wd);
   return(walls[i*iwd+j]==1)
 }
 
