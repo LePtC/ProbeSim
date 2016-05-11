@@ -26,13 +26,13 @@ var walls = new Array(
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
@@ -53,7 +53,7 @@ var walls = new Array(
 
 function startGame() {
 
-  CubeProbe = new ProbeComponent(16, 16, "#C59D0D", 20, 300);
+  CubeProbe = new ProbeComponent(16, 16, "#C59D0D", 200, 300);
   // CubeProbe.angle = Math.PI / 2;
 
   for (x in walls) {
@@ -62,7 +62,7 @@ function startGame() {
     if(walls[x]==1) {
       CubeWalls[x] = new WallComponent(wd, wd, "green", 200+wd*(j+0.5), wd*(i+0.5));
     }else{
-      CubeWalls[x] = new WallComponent(wd, wd, "rgba(0,0,0,1)", 200+wd*(j+0.5), wd*(i+0.5));
+      CubeWalls[x] = new WallComponent(wd, wd, "white", 200+wd*(j+0.5), wd*(i+0.5));
     }
   }
 
@@ -117,6 +117,7 @@ function ProbeComponent(width, height, color, x, y, type) {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
     ctx.fillStyle = color;
+    ctx.globalAlpha = 1;
     ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
     ctx.fillStyle = "#0568B7";
     ctx.fillRect(this.width / -4, this.height / -2  , this.width/2, this.height/4);
@@ -189,12 +190,13 @@ function updateGameArea() {
   myGameArea.clear();
 
   for (x in walls) {
-    if(walls[x]==1) {
-      CubeWalls[x].update(1);
-    }
-    if(walls[x]==0) {
-      CubeWalls[x].update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CubeWalls[x].x,CubeWalls[x].y));
-    }
+    var alpha = lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CubeWalls[x].x,CubeWalls[x].y);
+    // if(walls[x]==1) {
+    //   CubeWalls[x].update(1);
+    // }
+    // if(walls[x]==0) {
+      CubeWalls[x].update(alpha);
+    // }
   }
 
   CubeProbe.moveAngle = 0;
@@ -222,8 +224,9 @@ function lightlevel(ax,ay,ang,bx,by) {
   var distance = getr(bx-ax,by-ay);
   var slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,distance);
   slant = Math.pow(0.5*(1-slant),3)
-  if(distance>maxdistance || iswallinline(ax,ay,bx,by)){distance=maxdistance} //
-  return(1-(1-distance/maxdistance)*slant)
+  if(distance>=maxdistance){distance=maxdistance}
+  else if(iswallinline(ax,ay,bx,by)){distance=maxdistance} // 拆成两步以节约计算量
+  return((1-distance/maxdistance)*slant)
 }
 
 
@@ -237,6 +240,7 @@ function iswallinline(ax,ay,bx,by) {
   // while(!iswall(ax+n*dx,ay+n*dy) && n<total) {n++;}
   // return(n/total)
   var flag = false;
+  total--; // 减弱判断条件以照亮墙本身
   for(n=0;n<total;n++) {
     flag = flag || iswall(ax+n*dx,ay+n*dy);
   }
@@ -244,8 +248,8 @@ function iswallinline(ax,ay,bx,by) {
 }
 
 function iswall(x,y) {
-  var j = Math.round((x-200)/wd);
-  var i = Math.round(y/wd);
+  var j = Math.floor((x-200)/wd);  // 用 floor 才能照亮右下方的墙…
+  var i = Math.floor(y/wd);
   return(walls[i*iwd+j]==1)
 }
 
