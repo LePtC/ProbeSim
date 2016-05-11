@@ -222,11 +222,15 @@ function updateGameArea() {
 
 function lightlevel(ax,ay,ang,bx,by) {
   var distance = getr(bx-ax,by-ay);
+  if(distance>=maxdistance){return 0} // 提前 return 以节约计算量
   var slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,distance);
-  slant = Math.pow(0.5*(1-slant),3)
-  if(distance>=maxdistance){distance=maxdistance}
-  else if(iswallinline(ax,ay,bx,by)){distance=maxdistance} // 拆成两步以节约计算量
-  return((1-distance/maxdistance)*slant)
+  slant = Math.pow(0.5*(1-slant),6);
+  if(slant<0.005){return 0}
+  var convolve = (2*iswallinline(ax,ay,bx,by)+
+    iswallinline(ax,ay,bx+wd/2,by)+iswallinline(ax,ay,bx-wd/2,by)+
+    iswallinline(ax,ay,bx,by+wd/2)+iswallinline(ax,ay,bx,by-wd/2))/6;
+  if(wallat(bx,by)==1 && convolve<0.9){convolve=0} // 我决定给墙单独补光…
+  return((1-distance/maxdistance)*slant*(1-convolve))
 }
 
 
@@ -240,17 +244,17 @@ function iswallinline(ax,ay,bx,by) {
   // while(!iswall(ax+n*dx,ay+n*dy) && n<total) {n++;}
   // return(n/total)
   var flag = false;
-  total--; // 减弱判断条件以照亮墙本身
+  // total--; // 减弱判断条件以照亮墙本身
   for(n=0;n<total;n++) {
-    flag = flag || iswall(ax+n*dx,ay+n*dy);
+    flag = flag || wallat(ax+n*dx,ay+n*dy)==1;
   }
   return(flag)
 }
 
-function iswall(x,y) {
+function wallat(x,y) {
   var j = Math.floor(x/wd);  // 用 floor 才能照亮右下方的墙…
   var i = Math.floor(y/wd);
-  return(walls[i*iwd+j]==1)
+  return(walls[i*iwd+j])
 }
 
 
