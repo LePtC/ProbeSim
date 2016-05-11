@@ -4,8 +4,8 @@ body {
 }
 canvas {
   position:absolute;
-  left:5%;
-  top:5%;
+  left:0%;
+  top:0%;
   border:1px solid #d3d3d3;
   background-color: #000;
 }

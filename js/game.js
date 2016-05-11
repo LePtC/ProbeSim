@@ -59,9 +59,9 @@ function startGame() {
   for (x in walls) {
     var j = x%iwd; // i,j start from 0
     var i = (x-j)/iwd;
-    if(walls[x]==1) {
+    if (walls[x]==1) {
       CubeWalls[x] = new WallComponent(wd, wd, "green", wd*(j+0.5), wd*(i+0.5));
-    }else{
+    } else {
       CubeWalls[x] = new WallComponent(wd, wd, "white", wd*(j+0.5), wd*(i+0.5));
     }
   }
@@ -81,6 +81,16 @@ var myGameArea = {
 
     this.frameNo = 0;
     this.interval = setInterval(updateGameArea, 20); // 每 20th 毫秒 (50 fps)
+
+    this.canvas.style.cursor = "crosshair";
+    window.addEventListener('mousemove', function (e) {
+      myGameArea.x = e.pageX;
+      myGameArea.y = e.pageY;
+    })
+    window.addEventListener('touchmove', function (e) {
+      myGameArea.x = e.touches[0].screenX;
+      myGameArea.y = e.touches[0].screenY;
+    })
 
     window.addEventListener('keydown', function (e) {
       e.preventDefault();
@@ -143,12 +153,12 @@ function ProbeComponent(width, height, color, x, y, type) {
         (myright < otherleft) || (myleft > otherright)) {
       crash = false;
     }
-    if(crash){
+    if (crash) {
       this.speed *= 0.5;
-      if(Math.abs(this.x-otherobj.x)>=Math.abs(this.y-otherobj.y)) {
+      if (Math.abs(this.x-otherobj.x)>=Math.abs(this.y-otherobj.y)) {
         this.x += 2*bool2sgn(this.x,otherobj.x);
       }
-      if(Math.abs(this.x-otherobj.x)<=Math.abs(this.y-otherobj.y)) {
+      if (Math.abs(this.x-otherobj.x)<=Math.abs(this.y-otherobj.y)) {
         this.y += 2*bool2sgn(this.y,otherobj.y);
       }
     }
@@ -157,10 +167,10 @@ function ProbeComponent(width, height, color, x, y, type) {
   this.relaxAng = function() {
     var relaxangle = this.angle % (Math.PI/2);
     var relax;
-    if(relaxangle >0) {
-      if(relaxangle < Math.PI/4) {relax = -1} else {relax = 1}
+    if (relaxangle >0) {
+      if (relaxangle < Math.PI/4) {relax = -1} else {relax = 1}
     } else {
-      if(relaxangle < -Math.PI/4) {relax = -1} else {relax = 1}
+      if (relaxangle < -Math.PI/4) {relax = -1} else {relax = 1}
     }
     this.angle += 2*relax * Math.PI / 180;
   }
@@ -201,6 +211,19 @@ function updateGameArea() {
 
   CubeProbe.moveAngle = 0;
   CubeProbe.speed = 0;
+
+  if (myGameArea.x && myGameArea.y) { // myGameArea.touchX && myGameArea.touchY
+    var dx = myGameArea.x-CubeProbe.x;
+    var dy = CubeProbe.y-myGameArea.y; // y 轴指向下
+    var rot = CubeProbe.angle;
+    var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
+    var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
+
+    if(dxp>5) {CubeProbe.moveAngle = 4; }
+    else if(dxp<-5) {CubeProbe.moveAngle = -4; }
+    if(dyp>5) {CubeProbe.speed = 1.5; }
+    else if(dyp<-5) {CubeProbe.speed = -1.5; }
+  }
 
   if (myGameArea.keys && myGameArea.keys[37]) {CubeProbe.moveAngle = -4; }
   if (myGameArea.keys && myGameArea.keys[39]) {CubeProbe.moveAngle = 4; }
