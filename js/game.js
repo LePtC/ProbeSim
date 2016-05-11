@@ -219,10 +219,10 @@ function updateGameArea() {
     var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
     var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
 
-    if(dxp>5) {CubeProbe.moveAngle = 4; }
-    else if(dxp<-5) {CubeProbe.moveAngle = -4; }
-    if(dyp>5) {CubeProbe.speed = 1.5; }
-    else if(dyp<-5) {CubeProbe.speed = -1.5; }
+    if(dxp>4) {CubeProbe.moveAngle = 4; }
+    else if(dxp<-4) {CubeProbe.moveAngle = -4; }
+    if(dyp>4) {CubeProbe.speed = 1.5; }
+    else if(dyp<-4) {CubeProbe.speed = -1.5; }
   }
 
   if (myGameArea.keys && myGameArea.keys[37]) {CubeProbe.moveAngle = -4; }
@@ -252,7 +252,7 @@ function lightlevel(ax,ay,ang,bx,by) {
   var convolve = (2*iswallinline(ax,ay,bx,by)+
     iswallinline(ax,ay,bx+wd/2,by)+iswallinline(ax,ay,bx-wd/2,by)+
     iswallinline(ax,ay,bx,by+wd/2)+iswallinline(ax,ay,bx,by-wd/2))/6;
-  if(wallat(bx,by)==1 && convolve<0.9){convolve=0} // 我决定给墙单独补光…
+  if(wallat(bx,by)==1 && convolve<0.95){convolve=0} // 我决定给墙单独补光…
   return((1-distance/maxdistance)*slant*(1-convolve))
 }
 
@@ -260,7 +260,7 @@ function lightlevel(ax,ay,ang,bx,by) {
 
 function iswallinline(ax,ay,bx,by) {
   var len = getr(by-ay,bx-ax);
-  var total = 2*Math.round(len/wd);
+  var total = 1+Math.round(len/wd);
   var dx = (bx-ax)/total;
   var dy = (by-ay)/total;
   // var n = 0;
