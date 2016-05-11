@@ -5,6 +5,9 @@ var maxdistance = 300; // 最远光照
 
 
 var CubeProbe;
+var ShootFoe;
+var CreepFoe;
+
 var CubeWalls = new Array(); // 墙像素 10^2, 网格 80*40, 总像素 800*400
 var walls = new Array(
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -31,17 +34,17 @@ var walls = new Array(
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
@@ -53,9 +56,6 @@ var walls = new Array(
 
 function startGame() {
 
-  CubeProbe = new ProbeComponent(16, 16, "#C59D0D", 150, 300);
-  // CubeProbe.angle = Math.PI / 2;
-
   for (x in walls) {
     var j = x%iwd; // i,j start from 0
     var i = (x-j)/iwd;
@@ -65,6 +65,12 @@ function startGame() {
       CubeWalls[x] = new WallComponent(wd, wd, "white", wd*(j+0.5), wd*(i+0.5));
     }
   }
+
+  CubeProbe = new ProbeComponent(15, 15, "#C59D0D", 150, 300);
+  // CubeProbe.angle = Math.PI / 2;
+
+  ShootFoe = new FoeComponent(5, "#222", 500, 300);
+  CreepFoe = new FoeComponent(5, "red", 500, 200);
 
   myGameArea.start();
 }
@@ -106,6 +112,23 @@ var myGameArea = {
   },
   clear : function() {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+}
+
+
+
+function WallComponent(width, height, color, x, y, type) {
+
+  this.type = type;
+  this.width = width;
+  this.height = height;
+  this.x = x;
+  this.y = y;
+  this.update = function(getalpha) {
+    ctx = myGameArea.context;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = getalpha;
+    ctx.fillRect(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
   }
 }
 
@@ -178,18 +201,48 @@ function ProbeComponent(width, height, color, x, y, type) {
 
 
 
-function WallComponent(width, height, color, x, y, type) {
+function FoeComponent(radius, color, x, y, type) {
 
   this.type = type;
-  this.width = width;
-  this.height = height;
+  this.r = radius;
   this.x = x;
   this.y = y;
+  this.randomang = Math.random()*2*Math.PI;
   this.update = function(getalpha) {
     ctx = myGameArea.context;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, 2*Math.PI, false);
     ctx.fillStyle = color;
     ctx.globalAlpha = getalpha;
-    ctx.fillRect(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
+    ctx.fill();
+    // ctx.lineWidth = 3;
+    // ctx.strokeStyle = '#FF8000';
+    // ctx.stroke();
+  }
+  this.newPos = function(speed) { // 追击速度
+    if (!iswallinline(CubeProbe.x,CubeProbe.y,this.x,this.y)) {
+      var angledx = CubeProbe.x-this.x;
+      var angledy = CubeProbe.y-this.y;
+      var dr = getr(angledx,angledy);
+      this.x += speed * angledx/dr;
+      this.y += speed * angledy/dr;
+    } else {
+      if ((myGameArea.frameNo / 50) % 1 == 0) { // 每 1 秒随机改变方向
+        if (Math.random()>0.2) {
+          this.randomang += 10*Math.random();
+        }
+      }
+      var sin = Math.sin(this.randomang);
+      var cos = Math.cos(this.randomang);
+      if (wallat(this.x+2*radius*sin,this.y+2*radius*cos)==1) { // 预判, 不是非要撞到墙才转向
+        this.randomang += Math.PI; // 若撞墙则角度加 180
+        this.x -= speed*sin;
+        this.y -= speed*cos;
+      } else {
+        this.x += 0.5*speed*sin; // 随机游走速度 * 0.5
+        this.y += 0.5*speed*cos;
+      }
+    }
   }
 }
 
@@ -197,17 +250,24 @@ function WallComponent(width, height, color, x, y, type) {
 
 function updateGameArea() {
 
+  myGameArea.frameNo++;
   myGameArea.clear();
 
   for (x in walls) {
-    var alpha = lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CubeWalls[x].x,CubeWalls[x].y);
-    // if(walls[x]==1) {
-    //   CubeWalls[x].update(1);
-    // }
-    // if(walls[x]==0) {
-      CubeWalls[x].update(alpha);
-    // }
+    if (walls[x]==1) {
+      CubeWalls[x].update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CubeWalls[x].x,CubeWalls[x].y,true));
+    }
+    if (walls[x]==0) {
+      CubeWalls[x].update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CubeWalls[x].x,CubeWalls[x].y,false));
+    }
   }
+
+
+  ShootFoe.newPos(1); // 敌人速度比 Probe 慢
+  ShootFoe.update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,ShootFoe.x,ShootFoe.y,true));
+
+  CreepFoe.newPos(1.2); // 苦力怕速度
+  CreepFoe.update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CreepFoe.x,CreepFoe.y,true));
 
   CubeProbe.moveAngle = 0;
   CubeProbe.speed = 0;
@@ -243,16 +303,18 @@ function updateGameArea() {
 
 
 
-function lightlevel(ax,ay,ang,bx,by) {
+function lightlevel(ax,ay,ang,bx,by,highlight) {
+// return 1 // debug 用
   var distance = getr(bx-ax,by-ay);
   if(distance>=maxdistance){return 0} // 提前 return 以节约计算量
   var slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,distance);
   slant = Math.pow(0.5*(1-slant),6);
+  // slant = 1; // 环闪
   if(slant<0.005){return 0}
   var convolve = (2*iswallinline(ax,ay,bx,by)+
     iswallinline(ax,ay,bx+wd/2,by)+iswallinline(ax,ay,bx-wd/2,by)+
     iswallinline(ax,ay,bx,by+wd/2)+iswallinline(ax,ay,bx,by-wd/2))/6;
-  if(wallat(bx,by)==1 && convolve<0.95){convolve=0} // 我决定给墙单独补光…
+  if(highlight && convolve<0.95){convolve=0} // wallat(bx,by)==1 给墙和敌人单独补光
   return((1-distance/maxdistance)*slant*(1-convolve))
 }
 
