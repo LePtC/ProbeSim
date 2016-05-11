@@ -134,12 +134,6 @@ function ProbeComponent(width, height, color, x, y, type) {
   }
 }
 
-function bool2sgn(a,b) {
-  if(a>b){return 1}
-  if(a==b){return 0}
-  if(a<b){return -1}
-}
-
 
 
 function WallComponent(width, height, color, x, y, type) {
@@ -164,14 +158,13 @@ var maxdistance = 300; // 最远光照
 function updateGameArea() {
 
   myGameArea.clear();
+
   for (x in walls) {
     if(walls[x]==1) {
       CubeWalls[x].update(1);
     }
     if(walls[x]==0) {
-      var distance = Math.sqrt(Math.pow(CubeWalls[x].x-CubeProbe.x,2) + Math.pow(CubeWalls[x].y-CubeProbe.y,2));
-      if(distance>maxdistance){distance=maxdistance}
-      CubeWalls[x].update(distance/maxdistance);
+      CubeWalls[x].update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CubeWalls[x].x,CubeWalls[x].y));
     }
   }
 
@@ -193,4 +186,30 @@ function updateGameArea() {
   CubeProbe.update();
 
 }
+
+
+
+function lightlevel(ax,ay,ang,bx,by) {
+  var distance = Math.sqrt(Math.pow(bx-ax,2) + Math.pow(by-ay,2));
+  var slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,distance);
+  slant = Math.pow(0.5*(1-slant),3)
+  if(distance>maxdistance){distance=maxdistance}
+  return(1-(1-distance/maxdistance)*slant)
+}
+
+
+
+function bool2sgn(a,b) {
+  if(a>b){return 1}
+  if(a==b){return 0}
+  if(a<b){return -1}
+}
+
+function dot(ax,ay,bx,by,br) {
+  bx=bx/br;
+  by=by/br;
+  return(ax*bx+ay*by)
+}
+
+
 
