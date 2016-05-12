@@ -8,6 +8,11 @@ var CubeProbe;
 var ShootFoe;
 var CreepFoe;
 
+// 将字母翻译为键码
+var A=65,B=66,C=67,D=68,E=69,F=70,G=71,H=72,I=73,J=74,K=75,L=76,M=77,N=78,O=79,P=80,Q=81,R=82,S=83,T=84,U=85,V=86,W=87,X=88,Y=89,Z=90;
+var n = new Array(48,49,50,51,52,53,54,55,56,57); // 0~9
+var f = new Array(112,113,114,115,116,117,118,119,120,121,122,123); // f1~f12
+
 var CubeWalls = new Array(); // 墙像素 10^2, 网格 80*40, 总像素 800*400
 var walls = new Array(
   2,2,2,2,2,2,2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -53,6 +58,10 @@ var walls = new Array(
 );
 
 
+var SDprobemove;
+var SDprobeturn;
+
+
 
 function startGame() {
 
@@ -79,6 +88,9 @@ function startGame() {
 
   ShootFoe = new FoeComponent(7, "#222", 500, 300);
   CreepFoe = new FoeComponent(7, "red", 500, 200);
+
+  SDprobemove = new sound("sound/probemove.wav");
+  SDprobeturn = new sound("sound/probeturn.wav");
 
   myGameArea.start();
 }
@@ -149,7 +161,7 @@ function ProbeComponent(width, height, color, x, y, type) {
   this.height = height;
   this.speed = 0;
   this.angle = 0;
-  this.moveAngle = 0;
+  this.angspeed = 0;
   this.x = x;
   this.y = y;
   this.update = function() {
@@ -165,7 +177,7 @@ function ProbeComponent(width, height, color, x, y, type) {
     ctx.restore();
   }
   this.newPos = function() {
-    this.angle += this.moveAngle * Math.PI / 180;
+    this.angle += this.angspeed * Math.PI / 180;
     this.x += this.speed * Math.sin(this.angle);
     this.y -= this.speed * Math.cos(this.angle);
   }
@@ -256,6 +268,23 @@ function FoeComponent(radius, color, x, y, type) {
 
 
 
+function sound(src) {
+    this.sound = document.createElement("audio");
+    this.sound.src = src;
+    this.sound.setAttribute("preload", "auto");
+    this.sound.setAttribute("controls", "none");
+    this.sound.style.display = "none";
+    document.body.appendChild(this.sound);
+    this.play = function(){
+        this.sound.play();
+    }
+    this.stop = function(){
+        this.sound.pause();
+    }
+}
+
+
+
 function updateGameArea() {
 
   myGameArea.frameNo++;
@@ -277,7 +306,7 @@ function updateGameArea() {
   CreepFoe.newPos(1.2); // 苦力怕速度
   CreepFoe.update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CreepFoe.x,CreepFoe.y,true));
 
-  CubeProbe.moveAngle = 0;
+  CubeProbe.angspeed = 0;
   CubeProbe.speed = 0;
 
   if (myGameArea.x && myGameArea.y) { // myGameArea.touchX && myGameArea.touchY
@@ -287,16 +316,19 @@ function updateGameArea() {
     var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
     var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
 
-    if(dxp>4) {CubeProbe.moveAngle = 4; }
-    else if(dxp<-4) {CubeProbe.moveAngle = -4; }
+    if(dxp>4) {CubeProbe.angspeed = 4; }
+    else if(dxp<-4) {CubeProbe.angspeed = -4; }
     if(dyp>4) {CubeProbe.speed = 1.5; }
     else if(dyp<-4) {CubeProbe.speed = -1.5; }
   }
 
-  if (myGameArea.keys && myGameArea.keys[37]) {CubeProbe.moveAngle = -4; } // left
-  if (myGameArea.keys && myGameArea.keys[39]) {CubeProbe.moveAngle = 4; }
+  if (myGameArea.keys && myGameArea.keys[37]) {CubeProbe.angspeed = -4; } // left
+  if (myGameArea.keys && myGameArea.keys[39]) {CubeProbe.angspeed = 4; }
   if (myGameArea.keys && myGameArea.keys[38]) {CubeProbe.speed = 1.5; } // up
   if (myGameArea.keys && myGameArea.keys[40]) {CubeProbe.speed = -1.5; }
+
+  if(CubeProbe.speed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
+  if(CubeProbe.angspeed != 0) {SDprobeturn.play()} else {SDprobeturn.stop()}
 
   var crashflag = false;
   for (x in walls) { if(iswall(walls[x])) {
