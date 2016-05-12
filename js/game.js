@@ -1,12 +1,8 @@
 
 var wd = 10; // 墙宽
-var iwd = 80; // 网格宽度
+var iwd = 80; // 每行网格数
 var maxdistance = 300; // 最远光照
 
-
-var CubeProbe;
-var ShootFoe;
-var CreepFoe;
 
 // 将字母翻译为键码
 var A=65,B=66,C=67,D=68,E=69,F=70,G=71,H=72,I=73,J=74,K=75,L=76,M=77,N=78,O=79,P=80,Q=81,R=82,S=83,T=84,U=85,V=86,W=87,X=88,Y=89,Z=90;
@@ -58,6 +54,12 @@ var walls = new Array(
 );
 
 
+var CubeProbe;
+var ShootFoe;
+var CreepFoe;
+
+var ModCirclit;
+
 var SDprobemove;
 var SDprobeturn;
 
@@ -83,7 +85,9 @@ function startGame() {
     }
   }
 
-  CubeProbe = new ProbeComponent(15, 15, "#C59D0D", 20, 20);
+  ModCirclit = new ModComponent(wd+2, wd+2, "img/ModCirclit.png", 220-1, 30-1);
+
+  CubeProbe = new ProbeComponent(15, 15, "#C59D0D", 20, 30);
   CubeProbe.angle = Math.PI / 2;
 
   ShootFoe = new FoeComponent(7, "#222", 500, 300);
@@ -137,9 +141,8 @@ var myGameArea = {
 
 
 
-function WallComponent(width, height, color, x, y, type) {
+function WallComponent(width, height, color, x, y) {
 
-  this.type = type;
   this.width = width;
   this.height = height;
   this.x = x;
@@ -154,9 +157,25 @@ function WallComponent(width, height, color, x, y, type) {
 
 
 
-function ProbeComponent(width, height, color, x, y, type) {
+function ModComponent(width, height, color, x, y) {
 
-  this.type = type;
+  this.exist = true;
+  this.width = width;
+  this.height = height;
+  this.x = x;
+  this.y = y;
+  this.image = new Image();
+  this.image.src = color;
+  this.update = function(getalpha) {
+    ctx.globalAlpha = getalpha;
+    ctx.drawImage(this.image,this.x,this.y,this.width,this.height);
+  }
+}
+
+
+
+function ProbeComponent(width, height, color, x, y) {
+
   this.width = width;
   this.height = height;
   this.speed = 0;
@@ -164,6 +183,8 @@ function ProbeComponent(width, height, color, x, y, type) {
   this.angspeed = 0;
   this.x = x;
   this.y = y;
+  this.stamod = 0; // 静态插件
+  this.actmod = 0; // 动作插件
   this.update = function() {
     ctx = myGameArea.context;
     ctx.save();
@@ -221,9 +242,8 @@ function ProbeComponent(width, height, color, x, y, type) {
 
 
 
-function FoeComponent(radius, color, x, y, type) {
+function FoeComponent(radius, color, x, y) {
 
-  this.type = type;
   this.r = radius;
   this.x = x;
   this.y = y;
@@ -292,19 +312,18 @@ function updateGameArea() {
 
   for (x in walls) {
     if (iswall(walls[x])) {
-      CubeWalls[x].update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CubeWalls[x].x,CubeWalls[x].y,true));
+      CubeWalls[x].update(lightlevel(CubeProbe,CubeWalls[x],1));
     }
     if (walls[x]==0) {
-      CubeWalls[x].update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CubeWalls[x].x,CubeWalls[x].y,false));
+      CubeWalls[x].update(lightlevel(CubeProbe,CubeWalls[x],0));
     }
   }
 
-
   ShootFoe.newPos(1); // 敌人速度比 Probe 慢
-  ShootFoe.update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,ShootFoe.x,ShootFoe.y,true));
+  ShootFoe.update(lightlevel(CubeProbe,ShootFoe,2));
 
   CreepFoe.newPos(1.2); // 苦力怕速度
-  CreepFoe.update(lightlevel(CubeProbe.x,CubeProbe.y,CubeProbe.angle,CreepFoe.x,CreepFoe.y,true));
+  CreepFoe.update(lightlevel(CubeProbe,CreepFoe,2));
 
   CubeProbe.angspeed = 0;
   CubeProbe.speed = 0;
@@ -339,22 +358,39 @@ function updateGameArea() {
   CubeProbe.newPos();
   CubeProbe.update();
 
+  if (ModCirclit.exist) {
+    if (CubeProbe.crashWith(ModCirclit)) {
+      CubeProbe.stamod = 1;
+      ModCirclit.exist = false;
+    } else {
+      ModCirclit.update(lightlevel(CubeProbe,ModCirclit,2));
+    }
+  }
+
 }
 
 
 
-function lightlevel(ax,ay,ang,bx,by,highlight) {
+function lightlevel(source,target,highlight) {
 // return 1 // debug 用
+  var ax = source.x;
+  var ay = source.y;
+  var ang = source.angle; // source 必须是 Probe
+  var bx = target.x;
+  var by = target.y;
   var distance = getr(bx-ax,by-ay);
-  if(distance>=maxdistance){return 0} // 提前 return 以节约计算量
-  var slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,distance);
-  slant = Math.pow(0.5*(1-slant),6);
-  // slant = 1; // 环闪
-  if(slant<0.005){return 0}
+  if (distance>=maxdistance) {return 0} // 提前 return 以节约计算量
+  var slant = 1;
+  if (source.stamod != 1) {
+    slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,distance);
+    slant = Math.pow(0.5*(1-slant),3);
+    if (slant<0.005) {return 0}
+  }
   var convolve = (2*iswallinline(ax,ay,bx,by)+
     iswallinline(ax,ay,bx+wd/2,by)+iswallinline(ax,ay,bx-wd/2,by)+
     iswallinline(ax,ay,bx,by+wd/2)+iswallinline(ax,ay,bx,by-wd/2))/6;
-  if(highlight && convolve<0.95){convolve=0} // 给墙和敌人单独补光
+  if (highlight>0 && convolve<0.95) {convolve = 0} // 给墙补光
+  if (highlight<2) {slant = Math.pow(slant,2)} else {distance /= 1.5} // 给实体补光
   return((1-distance/maxdistance)*slant*(1-convolve))
 }
 
