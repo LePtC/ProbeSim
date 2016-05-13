@@ -101,7 +101,6 @@ var CreepFoe;
 var ModCirclit;
 
 var SDprobemove;
-var SDprobeturn;
 
 
 
@@ -133,8 +132,7 @@ function startGame() {
   ShootFoe = new FoeComponent(7, "#222", 500, 300);
   CreepFoe = new FoeComponent(7, "red", 500, 200);
 
-  SDprobemove = new sound("sound/probemove.wav");
-  SDprobeturn = new sound("sound/probeturn.wav");
+  SDprobemove = new Sound("sound/probemove.wav");
 
   myGameArea.start();
 }
@@ -328,19 +326,30 @@ function FoeComponent(radius, color, x, y) {
 
 
 
-function sound(src) {
-    this.sound = document.createElement("audio");
-    this.sound.src = src;
-    this.sound.setAttribute("preload", "auto");
-    this.sound.setAttribute("controls", "none");
-    this.sound.style.display = "none";
-    document.body.appendChild(this.sound);
-    this.play = function(){
-        this.sound.play();
-    }
-    this.stop = function(){
-        this.sound.pause();
-    }
+function Sound(src) {
+  // 造两个声音对象以解决循环播放的顿歇
+  this.sound1 = document.createElement("audio");
+  this.sound1.src = src;
+  this.sound1.setAttribute("preload", "auto");
+  this.sound1.setAttribute("controls", "none");
+  this.sound1.style.display = "none";
+  document.body.appendChild(this.sound1);
+
+  this.sound2 = document.createElement("audio");
+  this.sound2.src = src;
+  this.sound2.setAttribute("preload", "auto");
+  this.sound2.setAttribute("controls", "none");
+  this.sound2.style.display = "none";
+  document.body.appendChild(this.sound2);
+
+  this.play = function(){
+    if (myGameArea.frameNo % 20 >10) {this.sound1.play();}
+    else {this.sound2.play();}
+  }
+  this.stop = function(){
+    this.sound1.pause();
+    this.sound2.pause();
+  }
 }
 
 
@@ -386,8 +395,7 @@ function updateGameArea() {
   if (myGameArea.keys && myGameArea.keys[38]) {CubeProbe.speed = 1.5; } // up
   if (myGameArea.keys && myGameArea.keys[40]) {CubeProbe.speed = -1.5; }
 
-  if(CubeProbe.speed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
-  if(CubeProbe.angspeed != 0) {SDprobeturn.play()} else {SDprobeturn.stop()}
+  if(CubeProbe.speed != 0 || CubeProbe.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
 
   var crashflag = false;
   for (x in walls) { if(iswall(walls[x])) {
