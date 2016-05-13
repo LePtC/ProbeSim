@@ -101,6 +101,7 @@ var CreepFoe;
 // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
 var ModCirclit;
 var ModLifesen;
+var ModHacker;
 // 动作插件 -1 拖车 -2 机枪 -3 陷阱
 
 var SDprobemove;
@@ -129,6 +130,7 @@ function startGame() {
 
   ModCirclit = new ModComponent(wd+2, wd+2, "img/ModCirclit.png", 220-1, 30-1, 1);
   ModLifesen = new ModComponent(wd+2, wd+2, "img/ModLifesen.png", 170-1, 70-1, 2);
+  ModHacker = new ModComponent(wd+2, wd+2, "img/ModHacker.png", 370-1, 70-1, 3);
 
   CubeProbe = new ProbeComponent(15, 15, "#C59D0D", 20, 30);
   CubeProbe.angle = Math.PI / 2;
@@ -379,7 +381,10 @@ function updateGameArea() {
 
   for (x in walls) {
     if (iswall(walls[x])) {
-      CubeWalls[x].update(lightlevel(CubeProbe,CubeWalls[x],1));
+      if (CubeProbe.stamod == 3) {CubeWalls[x].update(0.8)}
+      else {
+        CubeWalls[x].update(lightlevel(CubeProbe,CubeWalls[x],1));
+      }
     }
     if (walls[x]==0) {
       CubeWalls[x].update(lightlevel(CubeProbe,CubeWalls[x],0));
@@ -426,6 +431,7 @@ function updateGameArea() {
 
   ModCirclit.update();
   ModLifesen.update();
+  ModHacker.update();
 
 }
 
