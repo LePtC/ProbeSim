@@ -98,7 +98,10 @@ var CubeProbe;
 var ShootFoe;
 var CreepFoe;
 
+// 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
 var ModCirclit;
+var ModLifesen;
+// 动作插件 -1 拖车 -2 机枪 -3 陷阱
 
 var SDprobemove;
 
@@ -124,7 +127,8 @@ function startGame() {
     }
   }
 
-  ModCirclit = new ModComponent(wd+2, wd+2, "img/ModCirclit.png", 220-1, 30-1);
+  ModCirclit = new ModComponent(wd+2, wd+2, "img/ModCirclit.png", 220-1, 30-1, 1);
+  ModLifesen = new ModComponent(wd+2, wd+2, "img/ModLifesen.png", 170-1, 70-1, 2);
 
   CubeProbe = new ProbeComponent(15, 15, "#C59D0D", 20, 30);
   CubeProbe.angle = Math.PI / 2;
@@ -195,18 +199,27 @@ function WallComponent(width, height, color, x, y) {
 
 
 
-function ModComponent(width, height, color, x, y) {
+function ModComponent(width, height, color, x, y, type) {
 
   this.exist = true;
   this.width = width;
   this.height = height;
   this.x = x;
   this.y = y;
+  this.type = type;
   this.image = new Image();
   this.image.src = color;
-  this.update = function(getalpha) {
-    ctx.globalAlpha = getalpha;
-    ctx.drawImage(this.image,this.x,this.y,this.width,this.height);
+
+  this.update = function() {
+    if (this.exist) {
+      if (CubeProbe.crashWith(this)) {
+        CubeProbe.stamod = type;
+        this.exist = false;
+      } else {
+        ctx.globalAlpha = lightlevel(CubeProbe,this,2);
+        ctx.drawImage(this.image,this.x,this.y,this.width,this.height);
+      }
+    }
   }
 }
 
@@ -221,8 +234,8 @@ function ProbeComponent(width, height, color, x, y) {
   this.angspeed = 0;
   this.x = x;
   this.y = y;
-  this.stamod = 0; // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
-  this.actmod = 0; // 动作插件 1 拖车 2 机枪 3 陷阱
+  this.stamod = 0;
+  this.actmod = 0;
   this.update = function() {
     ctx = myGameArea.context;
     ctx.save();
@@ -288,6 +301,11 @@ function FoeComponent(radius, color, x, y) {
   this.randomang = Math.random()*2*Math.PI;
   this.update = function(getalpha) {
     ctx = myGameArea.context;
+    if (CubeProbe.stamod == 2) {
+      ctx.fillStyle = "#28FF28";
+      ctx.globalAlpha = 1;
+      ctx.fillRect(this.x-2, this.y-2, 4, 4);
+    }
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, 2*Math.PI, false);
     ctx.fillStyle = color;
@@ -406,14 +424,8 @@ function updateGameArea() {
   CubeProbe.newPos();
   CubeProbe.update();
 
-  if (ModCirclit.exist) {
-    if (CubeProbe.crashWith(ModCirclit)) {
-      CubeProbe.stamod = 1;
-      ModCirclit.exist = false;
-    } else {
-      ModCirclit.update(lightlevel(CubeProbe,ModCirclit,2));
-    }
-  }
+  ModCirclit.update();
+  ModLifesen.update();
 
 }
 
