@@ -342,6 +342,30 @@ function FoeComponent(radius, color, x, y) {
       }
     }
   }
+  this.crashWith = function(otherobj) {
+    var myleft = this.x - this.r;
+    var myright = this.x + this.r;
+    var mytop = this.y - this.r;
+    var mybottom = this.y + this.r;
+    var otherleft = otherobj.x - (otherobj.width)/1.5;
+    var otherright = otherobj.x + (otherobj.width)/1.5;
+    var othertop = otherobj.y - (otherobj.height)/1.5;
+    var otherbottom = otherobj.y + (otherobj.height)/1.5;
+    var crash = true;
+    if ((mybottom < othertop) || (mytop > otherbottom) || // 注意 y 轴正向向下
+        (myright < otherleft) || (myleft > otherright)) {
+      crash = false;
+    }
+    if (crash) {
+      if (Math.abs(this.x-otherobj.x)>=Math.abs(this.y-otherobj.y)) {
+        this.x += 2*bool2sgn(this.x,otherobj.x);
+      }
+      if (Math.abs(this.x-otherobj.x)<=Math.abs(this.y-otherobj.y)) {
+        this.y += 2*bool2sgn(this.y,otherobj.y);
+      }
+    }
+    return crash;
+  }
 }
 
 
@@ -420,11 +444,26 @@ function updateGameArea() {
 
   if(CubeProbe.speed != 0 || CubeProbe.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
 
-  var crashflag = false;
-  for (x in walls) { if(iswall(walls[x])) {
-    crashflag = crashflag || CubeProbe.crashWith(CubeWalls[x]);
+
+  // Probe 撞墙检测
+  var loc = wallxat(CubeProbe.x,CubeProbe.y);
+  for (i=-1;i<=1;i++) { for (j=-1;j<=1;j++) {
+    var xtest = loc+i*iwd+j;
+    if(iswall(walls[xtest])) {
+      CubeProbe.crashWith(CubeWalls[xtest]);
+      CubeProbe.relaxAng();
+    }
   }}
-  if (crashflag) { CubeProbe.relaxAng() }
+  // Probe 撞敌人检测
+  if (touch(CubeProbe,ShootFoe)) {
+    CubeProbe.crashWith(ShootFoe);
+    ShootFoe.crashWith(CubeProbe);
+  }
+  if (touch(CubeProbe,CreepFoe)) {
+    CubeProbe.crashWith(CreepFoe);
+    CreepFoe.crashWith(CubeProbe);
+  }
+
 
   CubeProbe.newPos();
   CubeProbe.update();
@@ -478,14 +517,23 @@ function iswallinline(ax,ay,bx,by) {
   return(flag)
 }
 
-function wallat(x,y) {
-  var j = Math.floor(x/wd);  // 用 floor 才能照亮右下方的墙…
+function wallxat(x,y) {
+  var j = Math.floor(x/wd); // 用 floor 才能照亮右下方的墙…
   var i = Math.floor(y/wd);
-  return(walls[i*iwd+j])
+  return(i*iwd+j)
+}
+function wallat(x,y) {
+  return(walls[wallxat(x,y)])
 }
 
 function iswall(id) {
   if (id>=1 && id<=5) {return true}
+  else {return false}
+}
+
+function touch(p,f) {
+  var widsum = p.width/2+f.r;
+  if (p.x-f.x<widsum && p.x-f.x>-widsum && p.y-f.y<widsum && p.y-f.y>-widsum) {return true}
   else {return false}
 }
 
