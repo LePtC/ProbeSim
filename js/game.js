@@ -1,7 +1,8 @@
 
 var wd = 10; // 墙宽
 var iwd = 80; // 每行网格数
-var maxdistance = 300; // 最远光照
+var lightdistance = 300; // 最远光照半径
+var lifedistance = 300; // 生命探测半宽
 
 
 // 将字母翻译为键码
@@ -92,6 +93,7 @@ var walls = new Array(
   0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 );
+var wallslit = new Array(); // 存储光影
 
 
 var CubeProbe;
@@ -154,7 +156,7 @@ var myGameArea = {
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 40); // 每 40th 毫秒 (25 fps)
+    this.interval = setInterval(updateGameArea, 25); // 每 25th 毫秒 (40 fps)
 
     this.canvas.style.cursor = "crosshair";
     window.addEventListener('mousemove', function (e) {
@@ -249,6 +251,14 @@ function ProbeComponent(width, height, color, x, y) {
     ctx.fillStyle = "#0568B7";
     ctx.fillRect(this.width / -4, this.height / -2  , this.width/2, this.height/4);
     ctx.restore();
+    if (this.stamod == 2) { // 生命探测范围指示
+      ctx.fillStyle = "#28FF28";
+      ctx.globalAlpha = 0.3;
+      ctx.fillRect(this.x-lifedistance, this.y-lifedistance , 2*lifedistance, 1); // 上
+      ctx.fillRect(this.x-lifedistance, this.y+lifedistance , 2*lifedistance, 1); // 下
+      ctx.fillRect(this.x-lifedistance, this.y-lifedistance, 1 , 2*lifedistance); // 左
+      ctx.fillRect(this.x+lifedistance, this.y-lifedistance, 1 , 2*lifedistance); // 右
+    }
   }
   this.newPos = function() {
     this.angle += this.angspeed * Math.PI / 180;
@@ -303,7 +313,7 @@ function FoeComponent(radius, color, x, y) {
   this.randomang = Math.random()*2*Math.PI;
   this.update = function(getalpha) {
     ctx = myGameArea.context;
-    if (CubeProbe.stamod == 2) {
+    if (CubeProbe.stamod == 2 && Math.abs(CubeProbe.x-this.x)<=lifedistance && Math.abs(CubeProbe.y-this.y)<=lifedistance) {
       ctx.fillStyle = "#28FF28";
       ctx.globalAlpha = 1;
       ctx.fillRect(this.x-2, this.y-2, 4, 4);
@@ -484,7 +494,7 @@ function lightlevel(source,target,highlight) {
   var bx = target.x;
   var by = target.y;
   var distance = getr(bx-ax,by-ay);
-  if (distance>=maxdistance) {return 0} // 提前 return 以节约计算量
+  if (distance>=lightdistance) {return 0} // 提前 return 以节约计算量
   var slant = 1;
   if (source.stamod != 1) {
     slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,distance);
@@ -496,7 +506,7 @@ function lightlevel(source,target,highlight) {
     iswallinline(ax,ay,bx,by+wd/2)+iswallinline(ax,ay,bx,by-wd/2))/6;
   if (highlight>0 && convolve<0.95) {convolve = 0} // 给墙补光
   if (highlight<2) {slant = Math.pow(slant,2)} else {distance /= 1.5} // 给实体补光
-  return((1-distance/maxdistance)*slant*(1-convolve))
+  return((1-distance/lightdistance)*slant*(1-convolve))
 }
 
 
