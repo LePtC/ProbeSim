@@ -231,9 +231,12 @@ function ModComponent(wid, color, x, y, type) {
   this.update = function() {
     if (this.exist) {
       if (Probe1.crashWith(this)) {
-        Probe1.stamod = type;
-        this.exist = false;
-        for (x in map) {modlit[x]=0}
+        var empty = Probe1.findempty();
+        if (empty>=0) {
+          Probe1.mod[empty] = type;
+          this.exist = false;
+          if (type==1) {for (x in map) {modlit[x]=0}}
+        } // else 提示插槽已满
       } else {
         ctx = myGameArea.context;
         ctx.globalAlpha = cubelit(Wall[xat(this.x,this.y)].alpha);
@@ -254,9 +257,18 @@ function ProbeComponent(wid, color, x, y) {
   this.angspeed = 0;
   this.x = x;
   this.y = y;
-  this.stamod = 0;
-  this.actmod = 0;
+  this.mod = new Array(0,0,0); // 一个 Probe 现最多搭载 3 个插件, 以体积增大为惩罚
+  this.modnum = function(id) {
+    return((this.mod[0]==id)+(this.mod[1]==id)+(this.mod[2]==id))
+  }
+  this.findempty = function() {
+    if(this.mod[0]==0){return 0}
+    if(this.mod[1]==0){return 1}
+    if(this.mod[2]==0){return 2}
+    return(-1)
+  }
   this.update = function() {
+    this.wid = wid+2*((this.mod[0]!=0)+(this.mod[1]!=0)+(this.mod[2]!=0));
     ctx = myGameArea.context;
     ctx.save();
     ctx.translate(this.x, this.y);
@@ -267,7 +279,7 @@ function ProbeComponent(wid, color, x, y) {
     ctx.fillStyle = "#0568B7";
     ctx.fillRect(this.wid / -4, this.wid / -2  , this.wid/2, this.wid/4);
     ctx.restore();
-    if (this.stamod == 2) { // 生命探测范围指示
+    if (this.modnum(2)>0) { // 生命探测范围指示
       ctx.fillStyle = "#28FF28";
       ctx.globalAlpha = 0.3;
       ctx.fillRect(this.x-lifmax, this.y-lifmax , 2*lifmax, 1); // 上
@@ -329,7 +341,7 @@ function FoeComponent(radius, color, x, y) {
   this.randomang = Math.random()*2*Math.PI;
   this.update = function() {
     ctx = myGameArea.context;
-    if (Probe1.stamod == 2 && Math.abs(Probe1.x-this.x)<=lifmax && Math.abs(Probe1.y-this.y)<=lifmax) {
+    if (Probe1.modnum(2)>0 && Math.abs(Probe1.x-this.x)<=lifmax && Math.abs(Probe1.y-this.y)<=lifmax) {
       ctx.fillStyle = "#28FF28";
       ctx.globalAlpha = 1;
       ctx.fillRect(this.x-2, this.y-2, 4, 4);
@@ -431,7 +443,7 @@ function updateGameArea() {
 
   for (x in map) {
     if (iswall(map[x])) {
-      if (Probe1.stamod == 3) {Wall[x].update(0.8)}
+      if (Probe1.modnum(3)>0) {Wall[x].update(0.8)}
       else {
         Wall[x].update(cutone(lightlevel(Probe1,Wall[x],litmax,1)+modlit[x])); // 加上 mod 方块的光
       }
@@ -512,11 +524,11 @@ function lightlevel(source,target,max,highlight) {
   var r = getr(bx-ax,by-ay);
   if (r>=max) {return 0} // 提前 return 以节约计算量
   var slant = 1;
-  if (source.stamod != 1 && ang != "A") {
+  if (ang != "A") { if (source.modnum(1)==0) {
     slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,r);
     slant = Math.pow(0.5*(1-slant),3);
     if (slant<0.005) {return 0}
-  }
+  }}
   var convolve = (2*iswallinline(ax,ay,bx,by)+
     iswallinline(ax,ay,bx+wd/2,by)+iswallinline(ax,ay,bx-wd/2,by)+
     iswallinline(ax,ay,bx,by+wd/2)+iswallinline(ax,ay,bx,by-wd/2))/6;
