@@ -1,8 +1,8 @@
 
 var wd = 10; // 墙宽
 var iwd = 80; // 每行网格数
-var lightdistance = 300; // 最远光照半径
-var lifedistance = 300; // 生命探测半宽
+var litmax = 300; // 最远光照半径
+var lifmax = 200; // 生命探测半宽
 
 
 // 将字母翻译为键码
@@ -10,8 +10,8 @@ var A=65,B=66,C=67,D=68,E=69,F=70,G=71,H=72,I=73,J=74,K=75,L=76,M=77,N=78,O=79,P
 var n = new Array(48,49,50,51,52,53,54,55,56,57); // 0~9
 var f = new Array(112,113,114,115,116,117,118,119,120,121,122,123); // f1~f12
 
-var CubeWalls = new Array(); // 墙像素 10^2, 网格 80*80, 总像素 800*800
-var walls = new Array(
+var Wall = new Array(); // 墙像素 10^2, 网格 80*80, 总像素 800*800
+var map = new Array(
   2,2,2,2,2,2,2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
   2,0,0,0,0,0,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
@@ -93,10 +93,10 @@ var walls = new Array(
   0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 );
-var wallslit = new Array(); // 存储光影
+var modlit = new Array(); // 静态光源只计算一次,存着重复用
 
 
-var CubeProbe;
+var Probe1;
 var ShootFoe;
 var CreepFoe;
 
@@ -112,33 +112,46 @@ var SDprobemove;
 
 function startGame() {
 
-  for (x in walls) {
+  for (x in map) {
     var j = x%iwd; // i,j start from 0
     var i = (x-j)/iwd;
-    switch(walls[x]) {
+    switch(map[x]) {
     case 0:
-        CubeWalls[x] = new WallComponent(wd, wd, "white", wd*(j+0.5), wd*(i+0.5));
+        Wall[x] = new WallComponent(wd, "white", wd*(j+0.5), wd*(i+0.5));
         break;
     case 1:
-        CubeWalls[x] = new WallComponent(wd, wd, "green", wd*(j+0.5), wd*(i+0.5));
+        Wall[x] = new WallComponent(wd, "green", wd*(j+0.5), wd*(i+0.5));
         break;
     case 2:
-        CubeWalls[x] = new WallComponent(wd, wd, "#0094FF", wd*(j+0.5), wd*(i+0.5));
+        Wall[x] = new WallComponent(wd, "#0094FF", wd*(j+0.5), wd*(i+0.5));
         break;
     default:
 
     }
+    modlit[x] = 0;
   }
 
-  ModCirclit = new ModComponent(wd+2, wd+2, "img/ModCirclit.png", 220-1, 30-1, 1);
-  ModLifesen = new ModComponent(wd+2, wd+2, "img/ModLifesen.png", 170-1, 70-1, 2);
-  ModHacker = new ModComponent(wd+2, wd+2, "img/ModHacker.png", 370-1, 70-1, 3);
+  ModCirclit = new ModComponent(wd+2, "img/ModCirclit.png", 120-1, 230-1, 1);
+  ModLifesen = new ModComponent(wd+2, "img/ModLifesen.png", 170-1, 70-1, 2);
+  ModHacker = new ModComponent(wd+2, "img/ModHacker.png", 370-1, 70-1, 3);
 
-  CubeProbe = new ProbeComponent(15, 15, "#C59D0D", 20, 30);
-  CubeProbe.angle = Math.PI / 2;
+  // 计算 ModCirclit 方块的光影,max=10
+  for (i=0;i<20;i++) {
+  for (j=0;j<20;j++) {
+    x = xat(ModCirclit.x-(i-10)*wd,ModCirclit.y-(j-10)*wd);
+    if (iswall(map[x])) {
+      modlit[x] = lightlevel(ModCirclit,Wall[x],100,1);
+    }
+    if (map[x]==0) {
+      modlit[x] = lightlevel(ModCirclit,Wall[x],100,0);
+    }
+  }}
+
+  Probe1 = new ProbeComponent(15, "#C59D0D", 20, 30);
+  Probe1.ang = Math.PI / 2;
 
   ShootFoe = new FoeComponent(7, "#222", 500, 300);
-  CreepFoe = new FoeComponent(7, "red", 500, 200);
+  CreepFoe = new FoeComponent(7, "red", 500, 600);
 
   SDprobemove = new Sound("sound/probemove.wav");
 
@@ -156,7 +169,7 @@ var myGameArea = {
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 25); // 每 25th 毫秒 (40 fps)
+    this.interval = setInterval(updateGameArea, 40); // 每 40th 毫秒 (25 fps)
 
     this.canvas.style.cursor = "crosshair";
     window.addEventListener('mousemove', function (e) {
@@ -187,41 +200,43 @@ var myGameArea = {
 
 
 
-function WallComponent(width, height, color, x, y) {
+function WallComponent(wid, color, x, y) {
 
-  this.width = width;
-  this.height = height;
+  this.wid = wid;
   this.x = x;
   this.y = y;
+  this.alpha = 0;
   this.update = function(getalpha) {
+    this.alpha = getalpha;
     ctx = myGameArea.context;
     ctx.fillStyle = color;
     ctx.globalAlpha = getalpha;
-    ctx.fillRect(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
+    ctx.fillRect(this.x-this.wid/2, this.y-this.wid/2, this.wid, this.wid);
   }
 }
 
 
 
-function ModComponent(width, height, color, x, y, type) {
+function ModComponent(wid, color, x, y, type) {
 
   this.exist = true;
-  this.width = width;
-  this.height = height;
+  this.wid = wid;
   this.x = x;
   this.y = y;
+  this.ang = "A";
   this.type = type;
   this.image = new Image();
   this.image.src = color;
 
   this.update = function() {
     if (this.exist) {
-      if (CubeProbe.crashWith(this)) {
-        CubeProbe.stamod = type;
+      if (Probe1.crashWith(this)) {
+        Probe1.stamod = type;
         this.exist = false;
       } else {
-        ctx.globalAlpha = lightlevel(CubeProbe,this,2);
-        ctx.drawImage(this.image,this.x,this.y,this.width,this.height);
+        ctx = myGameArea.context;
+        ctx.globalAlpha = cubelit(Wall[xat(this.x,this.y)].alpha);
+        ctx.drawImage(this.image,this.x,this.y,this.wid,this.wid);
       }
     }
   }
@@ -229,12 +244,12 @@ function ModComponent(width, height, color, x, y, type) {
 
 
 
-function ProbeComponent(width, height, color, x, y) {
+function ProbeComponent(wid, color, x, y) {
 
-  this.width = width;
-  this.height = height;
+  this.wid = wid;
+  this.cubewid = wid;
   this.speed = 0;
-  this.angle = 0;
+  this.ang = 0;
   this.angspeed = 0;
   this.x = x;
   this.y = y;
@@ -244,37 +259,37 @@ function ProbeComponent(width, height, color, x, y) {
     ctx = myGameArea.context;
     ctx.save();
     ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
+    ctx.rotate(this.ang);
     ctx.fillStyle = color;
     ctx.globalAlpha = 1;
-    ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
+    ctx.fillRect(this.wid / -2, this.wid / -2, this.wid, this.wid);
     ctx.fillStyle = "#0568B7";
-    ctx.fillRect(this.width / -4, this.height / -2  , this.width/2, this.height/4);
+    ctx.fillRect(this.wid / -4, this.wid / -2  , this.wid/2, this.wid/4);
     ctx.restore();
     if (this.stamod == 2) { // 生命探测范围指示
       ctx.fillStyle = "#28FF28";
       ctx.globalAlpha = 0.3;
-      ctx.fillRect(this.x-lifedistance, this.y-lifedistance , 2*lifedistance, 1); // 上
-      ctx.fillRect(this.x-lifedistance, this.y+lifedistance , 2*lifedistance, 1); // 下
-      ctx.fillRect(this.x-lifedistance, this.y-lifedistance, 1 , 2*lifedistance); // 左
-      ctx.fillRect(this.x+lifedistance, this.y-lifedistance, 1 , 2*lifedistance); // 右
+      ctx.fillRect(this.x-lifmax, this.y-lifmax , 2*lifmax, 1); // 上
+      ctx.fillRect(this.x-lifmax, this.y+lifmax , 2*lifmax, 1); // 下
+      ctx.fillRect(this.x-lifmax, this.y-lifmax, 1 , 2*lifmax); // 左
+      ctx.fillRect(this.x+lifmax, this.y-lifmax, 1 , 2*lifmax); // 右
     }
   }
   this.newPos = function() {
-    this.angle += this.angspeed * Math.PI / 180;
-    this.x += this.speed * Math.sin(this.angle);
-    this.y -= this.speed * Math.cos(this.angle);
+    this.ang += this.angspeed * Math.PI / 180;
+    this.x += this.speed * Math.sin(this.ang);
+    this.y -= this.speed * Math.cos(this.ang);
   }
   this.crashWith = function(otherobj) {
-    var cubewidth = this.width/1.414214*Math.cos(Math.PI/4-Math.abs(this.angle%(Math.PI/2)));
-    var myleft = this.x - cubewidth;
-    var myright = this.x + cubewidth;
-    var mytop = this.y - cubewidth;
-    var mybottom = this.y + cubewidth;
-    var otherleft = otherobj.x - (otherobj.width)/2;
-    var otherright = otherobj.x + (otherobj.width)/2;
-    var othertop = otherobj.y - (otherobj.height)/2;
-    var otherbottom = otherobj.y + (otherobj.height)/2;
+    this.cubewid = this.wid/1.414214*Math.cos(Math.PI/4-Math.abs(this.ang%(Math.PI/2)));
+    var myleft = this.x - this.cubewid;
+    var myright = this.x + this.cubewid;
+    var mytop = this.y - this.cubewid;
+    var mybottom = this.y + this.cubewid;
+    var otherleft = otherobj.x - (otherobj.wid)/2;
+    var otherright = otherobj.x + (otherobj.wid)/2;
+    var othertop = otherobj.y - (otherobj.wid)/2;
+    var otherbottom = otherobj.y + (otherobj.wid)/2;
     var crash = true;
     if ((mybottom < othertop) || (mytop > otherbottom) || // 注意 y 轴正向向下
         (myright < otherleft) || (myleft > otherright)) {
@@ -292,14 +307,14 @@ function ProbeComponent(width, height, color, x, y) {
     return crash;
   }
   this.relaxAng = function() {
-    var relaxangle = this.angle % (Math.PI/2);
+    var relaxang = this.ang % (Math.PI/2);
     var relax;
-    if (relaxangle >0) {
-      if (relaxangle < Math.PI/4) {relax = -1} else {relax = 1}
+    if (relaxang >0) {
+      if (relaxang < Math.PI/4) {relax = -1} else {relax = 1}
     } else {
-      if (relaxangle < -Math.PI/4) {relax = -1} else {relax = 1}
+      if (relaxang < -Math.PI/4) {relax = -1} else {relax = 1}
     }
-    this.angle += 2*relax * Math.PI / 180;
+    this.ang += 2*relax * Math.PI / 180;
   }
 }
 
@@ -311,9 +326,9 @@ function FoeComponent(radius, color, x, y) {
   this.x = x;
   this.y = y;
   this.randomang = Math.random()*2*Math.PI;
-  this.update = function(getalpha) {
+  this.update = function() {
     ctx = myGameArea.context;
-    if (CubeProbe.stamod == 2 && Math.abs(CubeProbe.x-this.x)<=lifedistance && Math.abs(CubeProbe.y-this.y)<=lifedistance) {
+    if (Probe1.stamod == 2 && Math.abs(Probe1.x-this.x)<=lifmax && Math.abs(Probe1.y-this.y)<=lifmax) {
       ctx.fillStyle = "#28FF28";
       ctx.globalAlpha = 1;
       ctx.fillRect(this.x-2, this.y-2, 4, 4);
@@ -321,19 +336,19 @@ function FoeComponent(radius, color, x, y) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, 2*Math.PI, false);
     ctx.fillStyle = color;
-    ctx.globalAlpha = getalpha;
+    ctx.globalAlpha = cubelit(Wall[xat(this.x,this.y)].alpha);
     ctx.fill();
     // ctx.lineWidth = 3;
     // ctx.strokeStyle = '#FF8000';
     // ctx.stroke();
   }
   this.newPos = function(speed) { // 追击速度
-    if (!iswallinline(CubeProbe.x,CubeProbe.y,this.x,this.y)) {
-      var angledx = CubeProbe.x-this.x;
-      var angledy = CubeProbe.y-this.y;
-      var dr = getr(angledx,angledy);
-      this.x += speed * angledx/dr;
-      this.y += speed * angledy/dr;
+    if (!iswallinline(Probe1.x,Probe1.y,this.x,this.y)) {
+      var angdx = Probe1.x-this.x;
+      var angdy = Probe1.y-this.y;
+      var dr = getr(angdx,angdy);
+      this.x += speed * angdx/dr;
+      this.y += speed * angdy/dr;
     } else {
       if (myGameArea.frameNo % 50 == 0) { // 每 1 秒随机改变方向
         if (Math.random()>0.2) {
@@ -342,7 +357,7 @@ function FoeComponent(radius, color, x, y) {
       }
       var sin = Math.sin(this.randomang);
       var cos = Math.cos(this.randomang);
-      if (wallat(this.x+2*radius*sin,this.y+2*radius*cos)==1) { // 预判, 不是非要撞到墙才转向
+      if (idat(this.x+2*radius*sin,this.y+2*radius*cos)==1) { // 预判, 不是非要撞到墙才转向
         this.randomang += Math.PI; // 若撞墙则角度加 180
         this.x -= speed*sin;
         this.y -= speed*cos;
@@ -357,10 +372,10 @@ function FoeComponent(radius, color, x, y) {
     var myright = this.x + this.r;
     var mytop = this.y - this.r;
     var mybottom = this.y + this.r;
-    var otherleft = otherobj.x - (otherobj.width)/1.5;
-    var otherright = otherobj.x + (otherobj.width)/1.5;
-    var othertop = otherobj.y - (otherobj.height)/1.5;
-    var otherbottom = otherobj.y + (otherobj.height)/1.5;
+    var otherleft = otherobj.x - (otherobj.wid)/1.5;
+    var otherright = otherobj.x + (otherobj.wid)/1.5;
+    var othertop = otherobj.y - (otherobj.wid)/1.5;
+    var otherbottom = otherobj.y + (otherobj.wid)/1.5;
     var crash = true;
     if ((mybottom < othertop) || (mytop > otherbottom) || // 注意 y 轴正向向下
         (myright < otherleft) || (myleft > otherright)) {
@@ -413,70 +428,70 @@ function updateGameArea() {
   myGameArea.frameNo++;
   myGameArea.clear();
 
-  for (x in walls) {
-    if (iswall(walls[x])) {
-      if (CubeProbe.stamod == 3) {CubeWalls[x].update(0.8)}
+  for (x in map) {
+    if (iswall(map[x])) {
+      if (Probe1.stamod == 3) {Wall[x].update(0.8)}
       else {
-        CubeWalls[x].update(lightlevel(CubeProbe,CubeWalls[x],1));
+        Wall[x].update(lightlevel(Probe1,Wall[x],litmax,1)+modlit[x]); // 加上 mod 方块的光
       }
     }
-    if (walls[x]==0) {
-      CubeWalls[x].update(lightlevel(CubeProbe,CubeWalls[x],0));
+    if (map[x]==0) {
+      Wall[x].update(lightlevel(Probe1,Wall[x],litmax,0)+modlit[x]);
     }
   }
 
   ShootFoe.newPos(1); // 敌人速度比 Probe 慢
-  ShootFoe.update(lightlevel(CubeProbe,ShootFoe,2));
+  ShootFoe.update();
 
   CreepFoe.newPos(1.2); // 苦力怕速度
-  CreepFoe.update(lightlevel(CubeProbe,CreepFoe,2));
+  CreepFoe.update();
 
-  CubeProbe.angspeed = 0;
-  CubeProbe.speed = 0;
+  Probe1.angspeed = 0;
+  Probe1.speed = 0;
 
   if (myGameArea.x && myGameArea.y) { // myGameArea.touchX && myGameArea.touchY
-    var dx = myGameArea.x-CubeProbe.x;
-    var dy = CubeProbe.y-myGameArea.y; // y 轴指向下
-    var rot = CubeProbe.angle;
+    var dx = myGameArea.x-Probe1.x;
+    var dy = Probe1.y-myGameArea.y; // y 轴指向下
+    var rot = Probe1.ang;
     var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
     var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
 
-    if(dxp>4) {CubeProbe.angspeed = 4; }
-    else if(dxp<-4) {CubeProbe.angspeed = -4; }
-    if(dyp>4) {CubeProbe.speed = 1.5; }
-    else if(dyp<-4) {CubeProbe.speed = -1.5; }
+    if(dxp>4) {Probe1.angspeed = 4; }
+    else if(dxp<-4) {Probe1.angspeed = -4; }
+    if(dyp>4) {Probe1.speed = 1.5; }
+    else if(dyp<-4) {Probe1.speed = -1.5; }
   }
 
-  if (myGameArea.keys && myGameArea.keys[37]) {CubeProbe.angspeed = -4; } // left
-  if (myGameArea.keys && myGameArea.keys[39]) {CubeProbe.angspeed = 4; }
-  if (myGameArea.keys && myGameArea.keys[38]) {CubeProbe.speed = 1.5; } // up
-  if (myGameArea.keys && myGameArea.keys[40]) {CubeProbe.speed = -1.5; }
+  if (myGameArea.keys && myGameArea.keys[37]) {Probe1.angspeed = -4; } // left
+  if (myGameArea.keys && myGameArea.keys[39]) {Probe1.angspeed = 4; }
+  if (myGameArea.keys && myGameArea.keys[38]) {Probe1.speed = 1.5; } // up
+  if (myGameArea.keys && myGameArea.keys[40]) {Probe1.speed = -1.5; }
 
-  if(CubeProbe.speed != 0 || CubeProbe.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
+  if(Probe1.speed != 0 || Probe1.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
 
 
   // Probe 撞墙检测
-  var loc = wallxat(CubeProbe.x,CubeProbe.y);
+  var loc = xat(Probe1.x,Probe1.y);
   for (i=-1;i<=1;i++) { for (j=-1;j<=1;j++) {
     var xtest = loc+i*iwd+j;
-    if(iswall(walls[xtest])) {
-      CubeProbe.crashWith(CubeWalls[xtest]);
-      CubeProbe.relaxAng();
+    if(iswall(map[xtest])) {
+      Probe1.crashWith(Wall[xtest]);
+      Probe1.relaxAng();
     }
   }}
   // Probe 撞敌人检测
-  if (touch(CubeProbe,ShootFoe)) {
-    CubeProbe.crashWith(ShootFoe);
-    ShootFoe.crashWith(CubeProbe);
+  if (touch(Probe1,ShootFoe)) {
+    Probe1.crashWith(ShootFoe);
+    ShootFoe.crashWith(Probe1);
   }
-  if (touch(CubeProbe,CreepFoe)) {
-    CubeProbe.crashWith(CreepFoe);
-    CreepFoe.crashWith(CubeProbe);
+  if (touch(Probe1,CreepFoe)) {
+    Probe1.crashWith(CreepFoe);
+    CreepFoe.crashWith(Probe1);
   }
 
 
-  CubeProbe.newPos();
-  CubeProbe.update();
+  Probe1.newPos();
+  Probe1.update();
 
   ModCirclit.update();
   ModLifesen.update();
@@ -486,18 +501,18 @@ function updateGameArea() {
 
 
 
-function lightlevel(source,target,highlight) {
+function lightlevel(source,target,max,highlight) {
 // return 1 // debug 用
   var ax = source.x;
   var ay = source.y;
-  var ang = source.angle; // source 必须是 Probe
+  var ang = source.ang; // source 必须是 Probe (或 ModCirclit)
   var bx = target.x;
   var by = target.y;
-  var distance = getr(bx-ax,by-ay);
-  if (distance>=lightdistance) {return 0} // 提前 return 以节约计算量
+  var r = getr(bx-ax,by-ay);
+  if (r>=max) {return 0} // 提前 return 以节约计算量
   var slant = 1;
-  if (source.stamod != 1) {
-    slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,distance);
+  if (source.stamod != 1 && ang != "A") {
+    slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,r);
     slant = Math.pow(0.5*(1-slant),3);
     if (slant<0.005) {return 0}
   }
@@ -505,10 +520,16 @@ function lightlevel(source,target,highlight) {
     iswallinline(ax,ay,bx+wd/2,by)+iswallinline(ax,ay,bx-wd/2,by)+
     iswallinline(ax,ay,bx,by+wd/2)+iswallinline(ax,ay,bx,by-wd/2))/6;
   if (highlight>0 && convolve<0.95) {convolve = 0} // 给墙补光
-  if (highlight<2) {slant = Math.pow(slant,2)} else {distance /= 1.5} // 给实体补光
-  return((1-distance/lightdistance)*slant*(1-convolve))
+  // if (highlight<2) {slant = Math.pow(slant,2)} else {r /= 1.5} // 给实体补光
+  return((1-r/max)*slant*slant*(1-convolve))
 }
 
+
+function cubelit(maplit) { // 实体直接从地板获得光
+  if (maplit>0.25) {return 1}
+  else if (maplit>0.05) {return maplit*2}
+  else {return(maplit)}
+}
 
 
 function iswallinline(ax,ay,bx,by) {
@@ -522,18 +543,18 @@ function iswallinline(ax,ay,bx,by) {
   var flag = false;
   // total--; // 减弱判断条件以照亮墙本身
   for(n=0;n<total;n++) {
-    flag = flag || iswall(wallat(ax+n*dx,ay+n*dy));
+    flag = flag || iswall(idat(ax+n*dx,ay+n*dy));
   }
   return(flag)
 }
 
-function wallxat(x,y) {
+function xat(x,y) {
   var j = Math.floor(x/wd); // 用 floor 才能照亮右下方的墙…
   var i = Math.floor(y/wd);
   return(i*iwd+j)
 }
-function wallat(x,y) {
-  return(walls[wallxat(x,y)])
+function idat(x,y) {
+  return(map[xat(x,y)])
 }
 
 function iswall(id) {
@@ -542,7 +563,7 @@ function iswall(id) {
 }
 
 function touch(p,f) {
-  var widsum = p.width/2+f.r;
+  var widsum = p.wid/2+f.r;
   if (p.x-f.x<widsum && p.x-f.x>-widsum && p.y-f.y<widsum && p.y-f.y>-widsum) {return true}
   else {return false}
 }
