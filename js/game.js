@@ -2,7 +2,7 @@
 var wd = 10; // 墙宽
 var iwd = 80; // 每行网格数
 var litmax = 300; // 最远光照半径
-var lifmax = 200; // 生命探测半宽
+var lifmax =  new Array(0,200,350,500); // 生命探测半宽
 
 
 // 将字母翻译为键码
@@ -104,7 +104,9 @@ var CreepFoe;
 var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png");
 // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
 var ModCirclit;
-var ModLifesen;
+var ModLifesen1;
+var ModLifesen2;
+var ModLifesen3;
 var ModHacker;
 // 动作插件 -1 拖车 -2 机枪 -3 陷阱
 
@@ -134,7 +136,9 @@ function startGame() {
   }
 
   ModCirclit = new ModComponent(wd+2, 1, 120-1, 230-1);
-  ModLifesen = new ModComponent(wd+2, 2, 170-1, 70-1);
+  ModLifesen1 = new ModComponent(wd+2, 2, 170-1, 70-1);
+  ModLifesen2 = new ModComponent(wd+2, 2, 170-1, 100-1);
+  ModLifesen3 = new ModComponent(wd+2, 2, 170-1, 130-1);
   ModHacker = new ModComponent(wd+2, 3, 370-1, 70-1);
 
   // 计算 ModCirclit 方块的光影,max=10
@@ -286,10 +290,11 @@ function ProbeComponent(wid, color, x, y) {
     if (this.modnum(2)>0) { // 生命探测范围指示
       ctx.fillStyle = "#28FF28";
       ctx.globalAlpha = 0.3;
-      ctx.fillRect(this.x-lifmax, this.y-lifmax , 2*lifmax, 1); // 上
-      ctx.fillRect(this.x-lifmax, this.y+lifmax , 2*lifmax, 1); // 下
-      ctx.fillRect(this.x-lifmax, this.y-lifmax, 1 , 2*lifmax); // 左
-      ctx.fillRect(this.x+lifmax, this.y-lifmax, 1 , 2*lifmax); // 右
+      var w = lifmax[this.modnum(2)];
+      ctx.fillRect(this.x-w, this.y-w , 2*w, 1); // 上
+      ctx.fillRect(this.x-w, this.y+w , 2*w, 1); // 下
+      ctx.fillRect(this.x-w, this.y-w, 1 , 2*w); // 左
+      ctx.fillRect(this.x+w, this.y-w, 1 , 2*w); // 右
     }
   }
   this.newPos = function() {
@@ -345,7 +350,7 @@ function FoeComponent(radius, color, x, y) {
   this.randomang = Math.random()*2*Math.PI;
   this.update = function() {
     ctx = myGameArea.context;
-    if (Probe1.modnum(2)>0 && Math.abs(Probe1.x-this.x)<=lifmax && Math.abs(Probe1.y-this.y)<=lifmax) {
+    if (Probe1.modnum(2)>0 && Math.abs(Probe1.x-this.x)<=lifmax[Probe1.modnum(2)] && Math.abs(Probe1.y-this.y)<=lifmax[Probe1.modnum(2)]) {
       ctx.fillStyle = "#28FF28";
       ctx.globalAlpha = 1;
       ctx.fillRect(this.x-2, this.y-2, 4, 4);
@@ -531,7 +536,9 @@ function updateGameArea() {
   Probe1Info.update();
 
   ModCirclit.update();
-  ModLifesen.update();
+  ModLifesen1.update();
+  ModLifesen2.update();
+  ModLifesen3.update();
   ModHacker.update();
 
 }
