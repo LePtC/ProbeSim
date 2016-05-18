@@ -233,6 +233,7 @@ function ModComponent(wid, color, x, y, type) {
       if (Probe1.crashWith(this)) {
         Probe1.stamod = type;
         this.exist = false;
+        for (x in map) {modlit[x]=0}
       } else {
         ctx = myGameArea.context;
         ctx.globalAlpha = cubelit(Wall[xat(this.x,this.y)].alpha);
@@ -432,11 +433,11 @@ function updateGameArea() {
     if (iswall(map[x])) {
       if (Probe1.stamod == 3) {Wall[x].update(0.8)}
       else {
-        Wall[x].update(lightlevel(Probe1,Wall[x],litmax,1)+modlit[x]); // 加上 mod 方块的光
+        Wall[x].update(cutone(lightlevel(Probe1,Wall[x],litmax,1)+modlit[x])); // 加上 mod 方块的光
       }
     }
     if (map[x]==0) {
-      Wall[x].update(lightlevel(Probe1,Wall[x],litmax,0)+modlit[x]);
+      Wall[x].update(cutone(lightlevel(Probe1,Wall[x],litmax,0)+modlit[x]));
     }
   }
 
@@ -527,7 +528,7 @@ function lightlevel(source,target,max,highlight) {
 
 function cubelit(maplit) { // 实体直接从地板获得光
   if (maplit>0.25) {return 1}
-  else if (maplit>0.05) {return maplit*2}
+  else if (maplit>0.1) {return maplit*1.5}
   else {return(maplit)}
 }
 
@@ -568,6 +569,10 @@ function touch(p,f) {
   else {return false}
 }
 
+function cutone(a) {
+  if(a>1){return 1}
+  else{return a}
+}
 
 function bool2sgn(a,b) {
   if(a>b){return 1}
