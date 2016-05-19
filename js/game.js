@@ -83,6 +83,7 @@ var CreepFoe;
 
 var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png");
 // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
+var ModNull; // 我需要一个空对象
 var ModCirclit;
 var ModLifesen1;
 var ModLifesen2;
@@ -115,23 +116,14 @@ function startGame() {
     modlit[x] = 0;
   }
 
-  ModCirclit = new ModComponent(wd+2, 1, 120-1, 230-1);
-  ModLifesen1 = new ModComponent(wd+2, 2, 170-1, 70-1);
-  ModLifesen2 = new ModComponent(wd+2, 2, 170-1, 100-1);
-  ModLifesen3 = new ModComponent(wd+2, 2, 170-1, 130-1);
-  ModHacker = new ModComponent(wd+2, 3, 370-1, 70-1);
+  ModNull = new ModComponent(wd+2, 0, wd/2, wd/2);
+  ModCirclit = new ModComponent(wd+2, 1, 120+wd/2, 230+wd/2);
+  ModLifesen1 = new ModComponent(wd+2, 2, 170+wd/2, 70+wd/2);
+  ModLifesen2 = new ModComponent(wd+2, 2, 170+wd/2, 100+wd/2);
+  ModLifesen3 = new ModComponent(wd+2, 2, 170+wd/2, 130+wd/2);
+  ModHacker = new ModComponent(wd+2, 3, 370+wd/2, 70+wd/2);
 
-  // 计算 ModCirclit 方块的光影,max=10
-  for (i=0;i<20;i++) {
-  for (j=0;j<20;j++) {
-    x = xat(ModCirclit.x-(i-10)*wd,ModCirclit.y-(j-10)*wd);
-    if (iswall(map[x])) {
-      modlit[x] = lightlevel(ModCirclit,Wall[x],100,1);
-    }
-    if (map[x]==0) {
-      modlit[x] = lightlevel(ModCirclit,Wall[x],100,0);
-    }
-  }}
+  ModCirclit.updatelit();
 
   Probe1 = new ProbeComponent(15, "#C59D0D", 20, 30);
   Probe1.ang = Math.PI / 2;
@@ -206,7 +198,8 @@ function WallComponent(wid, color, x, y) {
 
 function ModComponent(wid, type, x, y) {
 
-  this.exist = true;
+  this.exist = -1; // -1 表示在地上, 012 表示在插槽
+  this.wait = false; // 等待复活
   this.wid = wid;
   this.x = x;
   this.y = y;
@@ -216,19 +209,39 @@ function ModComponent(wid, type, x, y) {
   this.image.src = ModImg[type];
 
   this.update = function() {
-    if (this.exist) {
+    if (this.exist == -1) {
       ctx = myGameArea.context;
       ctx.globalAlpha = cubelit(Wall[xat(this.x,this.y)].alpha);
-      ctx.drawImage(this.image,this.x,this.y,this.wid,this.wid);
+      ctx.drawImage(this.image,this.x-wid/2,this.y-wid/2,this.wid,this.wid);
       var empty = Probe1.findempty();
       if (empty>=0) {
         if (Probe1.crashWith(this)) {
-          Probe1.mod[empty] = type;
-          this.exist = false;
+          Probe1.mod[empty] = this; // 将本实体放入 Probe 的插槽
+          this.exist = empty;
           if (type==1) {for (x in map) {modlit[x]=0}}
         }
       } // else 提示插槽已满
+    } else if (this.wait) {
+      if (!Probe1.crashWith(this)) {
+        this.wait = false;
+        this.exist = -1;
+        if (type==1) {this.updatelit()}
+      }
     }
+  }
+
+  this.updatelit = function() {
+    // 计算 ModCirclit 方块的光影,max=10
+    for (i=0;i<20;i++) {
+    for (j=0;j<20;j++) {
+      x = xat(this.x-(i-10)*wd,this.y-(j-10)*wd);
+      if (iswall(map[x])) {
+        modlit[x] = lightlevel(this,Wall[x],100,1);
+      }
+      if (map[x]==0) {
+        modlit[x] = lightlevel(this,Wall[x],100,0);
+      }
+    }}
   }
 }
 
@@ -244,15 +257,22 @@ function ProbeComponent(wid, color, x, y) {
   this.x = x;
   this.y = y;
   this.color = color;
-  this.mod = new Array(0,0,0); // 一个 Probe 现最多搭载 3 个插件, 以体积增大为惩罚
+  this.mod = new Array(ModNull,ModNull,ModNull); // 一个 Probe 现最多搭载 3 个插件, 以体积增大为惩罚
   this.modnum = function(id) {
-    return((this.mod[0]==id)+(this.mod[1]==id)+(this.mod[2]==id))
+    return((this.mod[0].type==id)+(this.mod[1].type==id)+(this.mod[2].type==id))
   }
   this.findempty = function() {
-    if(this.mod[0]==0){return 0}
-    if(this.mod[1]==0){return 1}
-    if(this.mod[2]==0){return 2}
+    if(this.mod[0].type==0){return 0}
+    if(this.mod[1].type==0){return 1}
+    if(this.mod[2].type==0){return 2}
     return(-1)
+  }
+  this.putdown = function(i) {
+    var wa = Wall[xat(this.x,this.y)];
+    this.mod[i].x = wa.x-1;
+    this.mod[i].y = wa.y-1;
+    this.mod[i].wait = true;
+    this.mod[i] = ModNull;
   }
   this.update = function() {
     // this.wid = wid+2*((this.mod[0]!=0)+(this.mod[1]!=0)+(this.mod[2]!=0));
@@ -408,7 +428,7 @@ function InfoComponent(host, x, y) {
     ctx.fillRect(x+host.wid / -4, y+host.wid / -2  , host.wid/2, host.wid/4);
     for (i in host.mod) {
       var img = new Image();
-      img.src = ModImg[host.mod[i]];
+      img.src = ModImg[host.mod[i].type];
       ctx.drawImage(img,x+30+16*i,y-5,wd+2,wd+2);
     }
   }
@@ -476,16 +496,19 @@ function updateGameArea() {
     var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
     var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
 
-    if(dxp>4) {Probe1.angspeed = 4; }
-    else if(dxp<-4) {Probe1.angspeed = -4; }
-    if(dyp>4) {Probe1.speed = 1.5; }
-    else if(dyp<-4) {Probe1.speed = -1.5; }
+    if(dxp>4) {Probe1.angspeed = 4}
+    else if(dxp<-4) {Probe1.angspeed = -4}
+    if(dyp>4) {Probe1.speed = 1.5}
+    else if(dyp<-4) {Probe1.speed = -1.5}
   }
 
-  if (myGameArea.keys && myGameArea.keys[37]) {Probe1.angspeed = -4; } // left
-  if (myGameArea.keys && myGameArea.keys[39]) {Probe1.angspeed = 4; }
-  if (myGameArea.keys && myGameArea.keys[38]) {Probe1.speed = 1.5; } // up
-  if (myGameArea.keys && myGameArea.keys[40]) {Probe1.speed = -1.5; }
+  if (myGameArea.keys && myGameArea.keys[37]) {Probe1.angspeed = -4} // left
+  if (myGameArea.keys && myGameArea.keys[39]) {Probe1.angspeed = 4}
+  if (myGameArea.keys && myGameArea.keys[38]) {Probe1.speed = 1.5} // up
+  if (myGameArea.keys && myGameArea.keys[40]) {Probe1.speed = -1.5}
+  for (i=0;i<3;i++) {
+    if (myGameArea.keys && myGameArea.keys[49+i]) {Probe1.putdown(i)}
+  }
 
   if(Probe1.speed != 0 || Probe1.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
 
