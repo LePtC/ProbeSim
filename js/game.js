@@ -276,7 +276,7 @@ function ProbeComponent(wid, color, x, y) {
     return(-1)
   }
   this.update = function() {
-    this.wid = wid+2*((this.mod[0]!=0)+(this.mod[1]!=0)+(this.mod[2]!=0));
+    // this.wid = wid+2*((this.mod[0]!=0)+(this.mod[1]!=0)+(this.mod[2]!=0));
     ctx = myGameArea.context;
     ctx.save();
     ctx.translate(this.x, this.y);
