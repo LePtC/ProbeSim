@@ -1,7 +1,7 @@
 
 var wd = 10; // 墙宽
 var iwd = 80; // 每行网格数
-var litmax = new Array(250,250,400,600); // 最远光照半径
+var litmax = new Array(200,200,300,600); // 最远光照半径
 var lifmax =  new Array(0,200,350,500); // 生命探测半宽
 
 
@@ -73,6 +73,8 @@ var map = new Array(
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 );
+var fraclit = new Array(); // 径向递减光影只计算一次,存着重复用
+var frac1r = new Array(); // 半径的倒数只计算一次,存着重复用
 
 
 var Probe1;
@@ -116,6 +118,16 @@ function startGame() {
     }
   }
 
+  // 计算第四象限的径向递减光影, 左上为 1, 600 距离后为 0
+  for (i=0;i<60;i++) {
+  for (j=0;j<60;j++) {
+    var rt = getr(i*wd,j*wd);
+    // if (temp<0) {temp=0}
+    fraclit[i*60+j] = 1-rt/600;
+  // 计算半径的倒数
+    frac1r[i*60+j] = 1/rt;
+  }}
+
   ModNull = new ModComponent(wd+2, 0, -20, -20);
   ModCirclit1 = new ModComponent(wd+2, 1, 120+wd/2, 230+wd/2);
   ModCirclit2 = new ModComponent(wd+2, 1, 420+wd/2, 120+wd/2);
@@ -152,7 +164,7 @@ var myGameArea = {
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 40); // 每 40th 毫秒 (25 fps)
+    this.interval = setInterval(updateGameArea, 25); // 每 25th 毫秒 (40 fps)
 
     this.canvas.style.cursor = "crosshair";
     window.addEventListener('mousemove', function (e) {
@@ -582,11 +594,11 @@ function lightlevel(source,target,max,highlight) {
   var ang = source.ang; // source 必须是 Probe (或 ModCirclit)
   var bx = target.x;
   var by = target.y;
-  var r = getr(bx-ax,by-ay);
-  if (r>=max) {return 0} // 提前 return 以节约计算量
+  var frac = getfrac(bx-ax,by-ay,max);
+  if (frac<=0.001) {return 0} // 提前 return 以节约计算量
   var slant = 1;
   if (ang != "A") { if (source.modnum(1)==0) {
-    slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,r);
+    slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay);
     slant = Math.pow(0.5*(1-slant),3);
     if (slant<0.005) {return 0}
   }}
@@ -595,7 +607,7 @@ function lightlevel(source,target,max,highlight) {
     iswallinline(ax,ay,bx,by+wd/2)+iswallinline(ax,ay,bx,by-wd/2))/6;
   if (highlight>0 && convolve<0.95) {convolve = 0} // 给墙补光
   // if (highlight<2) {slant = Math.pow(slant,2)} else {r /= 1.5} // 给实体补光
-  return((1-r/max)*slant*slant*(1-convolve))
+  return(frac*slant*slant*(1-convolve))
 }
 
 
@@ -657,11 +669,19 @@ function getr(dx,dy) {
   return(Math.sqrt(Math.pow(dx,2) + Math.pow(dy,2)))
 }
 
-function dot(ax,ay,bx,by,br) {
-  bx=bx/br;
-  by=by/br;
-  return(ax*bx+ay*by)
+function dot(ax,ay,bx,by) {
+  var j = Math.floor(Math.abs(ax-bx)/wd);
+  var i = Math.floor(Math.abs(ay-by)/wd);
+  var fr = frac1r[i*60+j];
+  return(ax*bx*fr+ay*by*fr)
 }
 
-
+function getfrac(dx,dy,max) { // max 须能整除 600 (mod:100,probe:200,probe+:300,600)
+  var j = Math.floor(Math.abs(dx/wd));
+  if (j>=max/wd) {return 0}
+  var i = Math.floor(Math.abs(dy/wd));
+  if (i>=max/wd) {return 0}
+  var div = Math.floor(600/max);
+  return(fraclit[div*i*60+div*j])
+}
 
