@@ -73,7 +73,6 @@ var map = new Array(
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 );
-var modlit = new Array(); // 静态光源只计算一次,存着重复用
 
 
 var Probe1;
@@ -84,7 +83,9 @@ var CreepFoe;
 var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png");
 // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
 var ModNull; // 我需要一个空对象
-var ModCirclit;
+var ModCirclit1;
+var ModCirclit2;
+var ModCirclit3;
 var ModLifesen1;
 var ModLifesen2;
 var ModLifesen3;
@@ -113,17 +114,20 @@ function startGame() {
     default:
 
     }
-    modlit[x] = 0;
   }
 
   ModNull = new ModComponent(wd+2, 0, wd/2, wd/2);
-  ModCirclit = new ModComponent(wd+2, 1, 120+wd/2, 230+wd/2);
+  ModCirclit1 = new ModComponent(wd+2, 1, 120+wd/2, 230+wd/2);
+  ModCirclit2 = new ModComponent(wd+2, 1, 420+wd/2, 120+wd/2);
+  ModCirclit3 = new ModComponent(wd+2, 1, 320+wd/2, 320+wd/2);
   ModLifesen1 = new ModComponent(wd+2, 2, 170+wd/2, 70+wd/2);
   ModLifesen2 = new ModComponent(wd+2, 2, 170+wd/2, 100+wd/2);
   ModLifesen3 = new ModComponent(wd+2, 2, 170+wd/2, 130+wd/2);
   ModHacker = new ModComponent(wd+2, 3, 370+wd/2, 70+wd/2);
 
-  ModCirclit.updatelit();
+  ModCirclit1.updatelit();
+  ModCirclit2.updatelit();
+  ModCirclit3.updatelit();
 
   Probe1 = new ProbeComponent(15, "#C59D0D", 20, 30);
   Probe1.ang = Math.PI / 2;
@@ -185,11 +189,20 @@ function WallComponent(wid, color, x, y) {
   this.x = x;
   this.y = y;
   this.alpha = 0;
-  this.update = function(getalpha) {
-    this.alpha = getalpha;
+  this.update = function(x) {
+    if (iswall(map[x])) {
+      if (Probe1.modnum(3)>0) {this.alpha = 0.8}
+      else {
+        this.alpha = cutone(lightlevel(Probe1,this,litmax,1)+
+          ModCirclit1.modlit[x]+ModCirclit2.modlit[x]+ModCirclit3.modlit[x]);
+      }
+    } else { // if (map[x]==0)
+      this.alpha = cutone(lightlevel(Probe1,this,litmax,0)+
+        ModCirclit1.modlit[x]+ModCirclit2.modlit[x]+ModCirclit3.modlit[x]);
+    }
     ctx = myGameArea.context;
     ctx.fillStyle = color;
-    ctx.globalAlpha = getalpha;
+    ctx.globalAlpha = this.alpha;
     ctx.fillRect(this.x-this.wid/2, this.y-this.wid/2, this.wid, this.wid);
   }
 }
@@ -207,41 +220,63 @@ function ModComponent(wid, type, x, y) {
   this.type = type;
   this.image = new Image();
   this.image.src = ModImg[type];
+  this.modlit = new Array(); // 静态光源只计算一次,存着重复用
+  if (this.type == 1) {for (x in map) {this.modlit[x]=0}}
 
   this.update = function() {
     if (this.exist == -1) {
-      ctx = myGameArea.context;
-      ctx.globalAlpha = cubelit(Wall[xat(this.x,this.y)].alpha);
-      ctx.drawImage(this.image,this.x-wid/2,this.y-wid/2,this.wid,this.wid);
+      this.updatedraw();
       var empty = Probe1.findempty();
       if (empty>=0) {
-        if (Probe1.crashWith(this)) {
+        if (this.crashWith(Probe1)) {
           Probe1.mod[empty] = this; // 将本实体放入 Probe 的插槽
           this.exist = empty;
-          if (type==1) {for (x in map) {modlit[x]=0}}
+          if (type==1) {for (x in map) {this.modlit[x]=0}}
         }
       } // else 提示插槽已满
     } else if (this.wait) {
-      if (!Probe1.crashWith(this)) {
+      this.updatedraw();
+      if (type==1) {this.updatelit()}
+      if (!this.crashWith(Probe1)) {
         this.wait = false;
         this.exist = -1;
-        if (type==1) {this.updatelit()}
       }
     }
   }
-
+  this.updatedraw = function() {
+    ctx = myGameArea.context;
+    ctx.globalAlpha = cubelit(Wall[xat(this.x,this.y)].alpha);
+    ctx.drawImage(this.image,this.x-wid/2,this.y-wid/2,this.wid,this.wid);
+  }
   this.updatelit = function() {
     // 计算 ModCirclit 方块的光影,max=10
     for (i=0;i<20;i++) {
     for (j=0;j<20;j++) {
       x = xat(this.x-(i-10)*wd,this.y-(j-10)*wd);
       if (iswall(map[x])) {
-        modlit[x] = lightlevel(this,Wall[x],100,1);
+        this.modlit[x] = lightlevel(this,Wall[x],100,1);
       }
       if (map[x]==0) {
-        modlit[x] = lightlevel(this,Wall[x],100,0);
+        this.modlit[x] = lightlevel(this,Wall[x],100,0);
       }
     }}
+  }
+
+  this.crashWith = function(other) {
+    var myleft = this.x - this.wid/2;
+    var myright = this.x + this.wid/2;
+    var mytop = this.y - this.wid/2;
+    var mybottom = this.y + this.wid/2;
+    var otherleft = other.x - other.cubewid;
+    var otherright = other.x + other.cubewid;
+    var othertop = other.y - other.cubewid;
+    var otherbottom = other.y + other.cubewid;
+    var crash = true;
+    if ((mybottom < othertop) || (mytop > otherbottom) ||
+        (myright < otherleft) || (myleft > otherright)) {
+      crash = false;
+    }
+    return crash;
   }
 }
 
@@ -301,16 +336,16 @@ function ProbeComponent(wid, color, x, y) {
     this.x += this.speed * Math.sin(this.ang);
     this.y -= this.speed * Math.cos(this.ang);
   }
-  this.crashWith = function(otherobj) {
+  this.crashWith = function(other) {
     this.cubewid = this.wid/1.414214*Math.cos(Math.PI/4-Math.abs(this.ang%(Math.PI/2)));
     var myleft = this.x - this.cubewid;
     var myright = this.x + this.cubewid;
     var mytop = this.y - this.cubewid;
     var mybottom = this.y + this.cubewid;
-    var otherleft = otherobj.x - (otherobj.wid)/2;
-    var otherright = otherobj.x + (otherobj.wid)/2;
-    var othertop = otherobj.y - (otherobj.wid)/2;
-    var otherbottom = otherobj.y + (otherobj.wid)/2;
+    var otherleft = other.x - (other.wid)/2;
+    var otherright = other.x + (other.wid)/2;
+    var othertop = other.y - (other.wid)/2;
+    var otherbottom = other.y + (other.wid)/2;
     var crash = true;
     if ((mybottom < othertop) || (mytop > otherbottom) || // 注意 y 轴正向向下
         (myright < otherleft) || (myleft > otherright)) {
@@ -318,11 +353,11 @@ function ProbeComponent(wid, color, x, y) {
     }
     if (crash) {
       this.speed *= 0.5;
-      if (Math.abs(this.x-otherobj.x)>=Math.abs(this.y-otherobj.y)) {
-        this.x += 2*bool2sgn(this.x,otherobj.x);
+      if (Math.abs(this.x-other.x)>=Math.abs(this.y-other.y)) {
+        this.x += 2*bool2sgn(this.x,other.x);
       }
-      if (Math.abs(this.x-otherobj.x)<=Math.abs(this.y-otherobj.y)) {
-        this.y += 2*bool2sgn(this.y,otherobj.y);
+      if (Math.abs(this.x-other.x)<=Math.abs(this.y-other.y)) {
+        this.y += 2*bool2sgn(this.y,other.y);
       }
     }
     return crash;
@@ -378,7 +413,7 @@ function FoeComponent(radius, color, x, y) {
       }
       var sin = Math.sin(this.randomang);
       var cos = Math.cos(this.randomang);
-      if (idat(this.x+2*radius*sin,this.y+2*radius*cos)==1) { // 预判, 不是非要撞到墙才转向
+      if (idat(this.x+2*this.r*sin,this.y+2*this.r*cos)==1) { // 预判, 不是非要撞到墙才转向
         this.randomang += Math.PI; // 若撞墙则角度加 180
         this.x -= speed*sin;
         this.y -= speed*cos;
@@ -388,26 +423,26 @@ function FoeComponent(radius, color, x, y) {
       }
     }
   }
-  this.crashWith = function(otherobj) {
+  this.crashWith = function(other) {
     var myleft = this.x - this.r;
     var myright = this.x + this.r;
     var mytop = this.y - this.r;
     var mybottom = this.y + this.r;
-    var otherleft = otherobj.x - (otherobj.wid)/1.5;
-    var otherright = otherobj.x + (otherobj.wid)/1.5;
-    var othertop = otherobj.y - (otherobj.wid)/1.5;
-    var otherbottom = otherobj.y + (otherobj.wid)/1.5;
+    var otherleft = other.x - (other.wid)/1.5;
+    var otherright = other.x + (other.wid)/1.5;
+    var othertop = other.y - (other.wid)/1.5;
+    var otherbottom = other.y + (other.wid)/1.5;
     var crash = true;
     if ((mybottom < othertop) || (mytop > otherbottom) || // 注意 y 轴正向向下
         (myright < otherleft) || (myleft > otherright)) {
       crash = false;
     }
     if (crash) {
-      if (Math.abs(this.x-otherobj.x)>=Math.abs(this.y-otherobj.y)) {
-        this.x += 2*bool2sgn(this.x,otherobj.x);
+      if (Math.abs(this.x-other.x)>=Math.abs(this.y-other.y)) {
+        this.x += 2*bool2sgn(this.x,other.x);
       }
-      if (Math.abs(this.x-otherobj.x)<=Math.abs(this.y-otherobj.y)) {
-        this.y += 2*bool2sgn(this.y,otherobj.y);
+      if (Math.abs(this.x-other.x)<=Math.abs(this.y-other.y)) {
+        this.y += 2*bool2sgn(this.y,other.y);
       }
     }
     return crash;
@@ -468,17 +503,7 @@ function updateGameArea() {
   myGameArea.frameNo++;
   myGameArea.clear();
 
-  for (x in map) {
-    if (iswall(map[x])) {
-      if (Probe1.modnum(3)>0) {Wall[x].update(0.8)}
-      else {
-        Wall[x].update(cutone(lightlevel(Probe1,Wall[x],litmax,1)+modlit[x])); // 加上 mod 方块的光
-      }
-    }
-    if (map[x]==0) {
-      Wall[x].update(cutone(lightlevel(Probe1,Wall[x],litmax,0)+modlit[x]));
-    }
-  }
+  for (x in map) {Wall[x].update(x)}
 
   ShootFoe.newPos(1); // 敌人速度比 Probe 慢
   ShootFoe.update();
@@ -535,7 +560,9 @@ function updateGameArea() {
 
   Probe1.newPos();
 
-  ModCirclit.update();
+  ModCirclit1.update();
+  ModCirclit2.update();
+  ModCirclit3.update();
   ModLifesen1.update();
   ModLifesen2.update();
   ModLifesen3.update();
