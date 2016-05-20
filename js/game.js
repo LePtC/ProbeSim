@@ -78,12 +78,13 @@ var map = new Array(
 var Probe1;
 var Probe1Info;
 
-var FoeType = new Array("#fff","#222","red"); // 1 Shooter 2 Creeper
-var FoeSpeed = new Array(0,0.9,1.2); // 1 Shooter 2 Creeper
+var FoeType = new Array("#fff","#222","red","green"); // 1 Shooter 2 Creeper 3 Hamper
+var FoeSpeed = new Array(0,0.5,1.2,1.3);
 var FoeShoot1;
 var FoeShoot2;
 var BuList = new Array(); // 记录子弹对象
 var FoeCreep;
+var FoeHampe;
 
 var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png");
 // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
@@ -141,6 +142,7 @@ function startGame() {
   FoeShoot1 = new FoeCom(7, 1, 500, 200);
   FoeShoot2 = new FoeCom(7, 1, 300, 300);
   FoeCreep = new FoeCom(7, 2, 500, 500);
+  FoeHampe = new FoeCom(5, 3, 310, 300);
 
   SDprobemove = new Sound("sound/probemove.wav");
 
@@ -364,8 +366,8 @@ function FoeCom(radius, type, x, y) {
   this.y = y;
   this.type = type;
   this.randomang = Math.random()*2*Math.PI;
-  this.pursuerandx = 40*Math.random()-20;
-  this.pursuerandy = 40*Math.random()-20;
+  this.pursuerandx = 0;
+  this.pursuerandy = 0;
   this.update = function() {
     this.newPos();
     ctx = myGameArea.context;
@@ -389,8 +391,10 @@ function FoeCom(radius, type, x, y) {
       var angdx = Probe1.x-this.x;
       var angdy = Probe1.y-this.y;
       if (myGameArea.frameNo % 25 == 0) {
-        this.pursuerandx = 40*Math.random()-20; // 追击方向加入随机涨落
-        this.pursuerandy = 40*Math.random()-20;
+        if (this.type != 3) {
+          this.pursuerandx = 40*Math.random()-20; // 追击方向加入随机涨落,除了hamper
+          this.pursuerandy = 40*Math.random()-20;
+        }
         if (this.type == 1) { // 每 0.5 秒生成新子弹
           var empty = 0;
           while (BuList[empty] != null) {empty++}
@@ -543,6 +547,7 @@ function updateGameArea() {
   FoeShoot1.update();
   FoeShoot2.update();
   FoeCreep.update();
+  FoeHampe.update();
 
   Probe1.angspeed = 0;
   Probe1.speed = 0;
