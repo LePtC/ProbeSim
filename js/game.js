@@ -364,6 +364,8 @@ function FoeCom(radius, type, x, y) {
   this.y = y;
   this.type = type;
   this.randomang = Math.random()*2*Math.PI;
+  this.pursuerandx = 40*Math.random()-20;
+  this.pursuerandy = 40*Math.random()-20;
   this.update = function() {
     this.newPos();
     ctx = myGameArea.context;
@@ -386,14 +388,18 @@ function FoeCom(radius, type, x, y) {
     if (!iswallinline(Probe1.x,Probe1.y,this.x,this.y)) {
       var angdx = Probe1.x-this.x;
       var angdy = Probe1.y-this.y;
-      var dr = getr(angdx,angdy);
-      this.x += speed * angdx/dr;
-      this.y += speed * angdy/dr;
-      if (this.type == 1 && myGameArea.frameNo % 50 == 0) { // 每 1 秒生成新子弹
-        var empty = 0;
-        while (BuList[empty] != null) {empty++}
-        BuList[empty] = new BuCom(this.x,this.y,angdx,angdy,empty);
+      if (myGameArea.frameNo % 25 == 0) {
+        this.pursuerandx = 40*Math.random()-20; // 追击方向加入随机涨落
+        this.pursuerandy = 40*Math.random()-20;
+        if (this.type == 1) { // 每 0.5 秒生成新子弹
+          var empty = 0;
+          while (BuList[empty] != null) {empty++}
+          BuList[empty] = new BuCom(this.x,this.y,angdx,angdy,empty);
+        }
       }
+      var dr = getr(angdx,angdy);
+      this.x += speed * (angdx+this.pursuerandx)/dr; // 距离越远涨落越小
+      this.y += speed * (angdy+this.pursuerandy)/dr;
     } else {
       if (myGameArea.frameNo % 50 == 0) { // 每 1 秒随机改变方向
         if (Math.random()>0.2) {
