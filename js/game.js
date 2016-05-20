@@ -100,6 +100,7 @@ var ModHacker;
 
 var SDprobemove;
 var SDshoot;
+var SDexplode;
 
 
 
@@ -147,6 +148,7 @@ function startGame() {
 
   SDprobemove = new Sound("sound/probemove.wav");
   SDshoot = new Sound("sound/shoot.wav");
+  SDexplode = new Sound("sound/explode.wav");
 
   myGameArea.start();
 }
@@ -403,6 +405,14 @@ function FoeCom(radius, type, x, y) {
           BuList[empty] = new BuCom(this.x,this.y,angdx,angdy,empty);
           SDshoot.play();
         }
+        if (this.type == 2) {
+          if (getr2(this.x-Probe1.x,this.y-Probe1.y) < 9*wd*wd) {
+            Probe1.health -= 5;
+            SDexplode.play();
+            this.x = 790; // 先假装重新刷新一个吧
+            this.y = 590;
+          }
+        }
       }
       var dr = getr(angdx,angdy);
       this.x += speed * (angdx+this.pursuerandx)/dr; // 距离越远涨落越小
@@ -441,7 +451,6 @@ function FoeCom(radius, type, x, y) {
     }
   }
 }
-
 
 
 
@@ -685,8 +694,12 @@ function bool2sgn(a,b) {
   if(a<b){return -1}
 }
 
+function getr2(dx,dy) {
+  return(dx*dx+dy*dy)
+}
+
 function getr(dx,dy) {
-  return(Math.sqrt(Math.pow(dx,2) + Math.pow(dy,2)))
+  return(Math.sqrt(getr2(dx,dy)))
 }
 
 function dot(ax,ay,bx,by,br) {
