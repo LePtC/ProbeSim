@@ -80,7 +80,8 @@ var Probe1Info;
 
 var FoeType = new Array("#fff","#222","red"); // 1 Shooter 2 Creeper
 var FoeSpeed = new Array(0,0.9,1.2); // 1 Shooter 2 Creeper
-var FoeShoot;
+var FoeShoot1;
+var FoeShoot2;
 var BuList = new Array(); // 记录子弹对象
 var FoeCreep;
 
@@ -137,7 +138,8 @@ function startGame() {
   Probe1.ang = Math.PI / 2;
   Probe1Info = new InfoCom(Probe1, 16, 250);
 
-  FoeShoot = new FoeCom(7, 1, 500, 200);
+  FoeShoot1 = new FoeCom(7, 1, 500, 200);
+  FoeShoot2 = new FoeCom(7, 1, 300, 300);
   FoeCreep = new FoeCom(7, 2, 500, 500);
 
   SDprobemove = new Sound("sound/probemove.wav");
@@ -302,6 +304,7 @@ function ProbeCom(wid, color, x, y) {
     this.mod[i] = ModNull;
   }
   this.update = function() {
+    this.newPos();
     // this.wid = wid+2*((this.mod[0]!=0)+(this.mod[1]!=0)+(this.mod[2]!=0));
     ctx = myGameArea.context;
     ctx.save();
@@ -362,6 +365,7 @@ function FoeCom(radius, type, x, y) {
   this.type = type;
   this.randomang = Math.random()*2*Math.PI;
   this.update = function() {
+    this.newPos();
     ctx = myGameArea.context;
     if (Probe1.modnum(2)>0 && Math.abs(Probe1.x-this.x)<=lifmax[Probe1.modnum(2)] && Math.abs(Probe1.y-this.y)<=lifmax[Probe1.modnum(2)]) {
       ctx.fillStyle = "#28FF28";
@@ -378,12 +382,13 @@ function FoeCom(radius, type, x, y) {
     // ctx.stroke();
   }
   this.newPos = function() { // 追击速度
+    var speed = FoeSpeed[this.type];
     if (!iswallinline(Probe1.x,Probe1.y,this.x,this.y)) {
       var angdx = Probe1.x-this.x;
       var angdy = Probe1.y-this.y;
       var dr = getr(angdx,angdy);
-      this.x += FoeSpeed[this.type] * angdx/dr;
-      this.y += FoeSpeed[this.type] * angdy/dr;
+      this.x += speed * angdx/dr;
+      this.y += speed * angdy/dr;
       if (this.type == 1 && myGameArea.frameNo % 50 == 0) { // 每 1 秒生成新子弹
         var empty = 0;
         while (BuList[empty] != null) {empty++}
@@ -405,6 +410,11 @@ function FoeCom(radius, type, x, y) {
         this.x += 0.5*speed*sin; // 随机游走速度 * 0.5
         this.y += 0.5*speed*cos;
       }
+    }
+    // Probe 和敌人互怼检测
+    if (touch(Probe1,this)) {
+      Probe1.crashWith(this);
+      this.crashWith(Probe1);
     }
   }
   this.crashWith = function(other) {
@@ -428,8 +438,8 @@ function BuCom(x, y, dx, dy, index) {
   this.y = y;
   this.index = index;
   var r = getr(dx,dy);
-  var dxn = 7*dx/r; // 线速度 7px/frame
-  var dyn = 7*dy/r;
+  var dxn = 7*dx/r+(Math.random()*2-1); // 线速度 7px/frame 出射角加入随机涨落
+  var dyn = 7*dy/r+(Math.random()*2-1);
   this.update = function() {
     this.x += dxn;
     this.y += dyn;
@@ -524,10 +534,8 @@ function updateGameArea() {
 
   for (n in map) {Wall[n].update(n)}
 
-  FoeShoot.newPos(); // 敌人速度比 Probe 慢
-  FoeShoot.update();
-
-  FoeCreep.newPos(); // 苦力怕速度
+  FoeShoot1.update();
+  FoeShoot2.update();
   FoeCreep.update();
 
   Probe1.angspeed = 0;
@@ -566,18 +574,6 @@ function updateGameArea() {
       Probe1.relaxAng();
     }
   }}
-  // Probe 撞敌人检测
-  if (touch(Probe1,FoeShoot)) {
-    Probe1.crashWith(FoeShoot);
-    FoeShoot.crashWith(Probe1);
-  }
-  if (touch(Probe1,FoeCreep)) {
-    Probe1.crashWith(FoeCreep);
-    FoeCreep.crashWith(Probe1);
-  }
-
-
-  Probe1.newPos();
 
   ModCirclit1.update();
   ModCirclit2.update();
