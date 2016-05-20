@@ -597,13 +597,13 @@ function iswall(id) {
 
 function touch(p,f) {
   var widsum = p.wid/2+f.r;
-  if (p.x-f.x<widsum && p.x-f.x>-widsum && p.y-f.y<widsum && p.y-f.y>-widsum) {return true}
-  else {return false}
+  if (p.x-f.x<widsum && p.x-f.x>-widsum && p.y-f.y<widsum && p.y-f.y>-widsum) {return true
+  } else {return false}
 }
 
 function cutone(a) {
   if(a>1){return 1}
-  else{return a}
+  else {return(a)}
 }
 
 function bool2sgn(a,b) {
@@ -617,25 +617,13 @@ function getr(dx,dy) {
 }
 
 function dot(ax,ay,bx,by,br) {
-  bx=bx/br;
-  by=by/br;
-  return(ax*bx+ay*by)
+  return(ax*bx/br+ay*by/br)
 }
 
 function crash(my, myhwid, other, otherhwid) {
-    var myleft = my.x - myhwid;
-    var myright = my.x + myhwid;
-    var mytop = my.y - myhwid;
-    var mybottom = my.y + myhwid;
-    var otherleft = other.x - otherhwid;
-    var otherright = other.x + otherhwid;
-    var othertop = other.y - otherhwid;
-    var otherbottom = other.y + otherhwid;
-    var crash = true;
-    if ((mybottom < othertop) || (mytop > otherbottom) ||
-        (myright < otherleft) || (myleft > otherright)) {
-      crash = false;
-    }
-    return crash;
-  }
+  if ((my.y+myhwid < other.y-otherhwid) || (my.y-myhwid > other.y+otherhwid) ||
+      (my.x+myhwid < other.x-otherhwid) || (my.x-myhwid > other.x+otherhwid)) {
+    return(false);
+  } else {return(true)}
+}
 
