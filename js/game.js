@@ -98,18 +98,18 @@ var SDprobemove;
 
 function startGame() {
 
-  for (x in map) {
-    var j = x%iwd; // i,j start from 0
-    var i = (x-j)/iwd;
-    switch(map[x]) {
+  for (n in map) {
+    var j = n%iwd; // i,j start from 0
+    var i = (n-j)/iwd;
+    switch(map[n]) {
     case 0:
-        Wall[x] = new WallComponent(wd, "white", wd*(j+0.5), wd*(i+0.5));
+        Wall[n] = new WallComponent(wd, "white", wd*(j+0.5), wd*(i+0.5));
         break;
     case 1:
-        Wall[x] = new WallComponent(wd, "green", wd*(j+0.5), wd*(i+0.5));
+        Wall[n] = new WallComponent(wd, "green", wd*(j+0.5), wd*(i+0.5));
         break;
     case 2:
-        Wall[x] = new WallComponent(wd, "#0094FF", wd*(j+0.5), wd*(i+0.5));
+        Wall[n] = new WallComponent(wd, "#0094FF", wd*(j+0.5), wd*(i+0.5));
         break;
     default:
 
@@ -189,16 +189,16 @@ function WallComponent(wid, color, x, y) {
   this.x = x;
   this.y = y;
   this.alpha = 0;
-  this.update = function(x) {
-    if (iswall(map[x])) {
+  this.update = function(n) {
+    if (iswall(map[n])) {
       if (Probe1.modnum(3)>0) {this.alpha = 0.8}
       else {
         this.alpha = cutone(lightlevel(Probe1,this,litmax[Probe1.modnum(1)],1)+
-          ModCirclit1.modlit[x]+ModCirclit2.modlit[x]+ModCirclit3.modlit[x]);
+          ModCirclit1.modlit[n]+ModCirclit2.modlit[n]+ModCirclit3.modlit[n]);
       }
-    } else { // if (map[x]==0)
+    } else { // if (map[n]==0)
       this.alpha = cutone(lightlevel(Probe1,this,litmax[Probe1.modnum(1)],0)+
-        ModCirclit1.modlit[x]+ModCirclit2.modlit[x]+ModCirclit3.modlit[x]);
+        ModCirclit1.modlit[n]+ModCirclit2.modlit[n]+ModCirclit3.modlit[n]);
     }
     ctx = myGameArea.context;
     ctx.fillStyle = color;
@@ -221,7 +221,7 @@ function ModComponent(wid, type, x, y) {
   this.image = new Image();
   this.image.src = ModImg[type];
   this.modlit = new Array(); // 静态光源只计算一次,存着重复用
-  if (this.type == 1) {for (x in map) {this.modlit[x]=0}}
+  if (this.type == 1) {for (n in map) {this.modlit[n]=0}}
 
   this.update = function() {
     if (this.exist == -1) {
@@ -231,7 +231,7 @@ function ModComponent(wid, type, x, y) {
         if (this.crashWith(Probe1)) {
           Probe1.mod[empty] = this; // 将本实体放入 Probe 的插槽
           this.exist = empty;
-          if (type==1) {for (x in map) {this.modlit[x]=0}}
+          if (type==1) {for (n in map) {this.modlit[n]=0}}
         }
       } // else 提示插槽已满
     } else if (this.wait) {
@@ -244,38 +244,25 @@ function ModComponent(wid, type, x, y) {
   }
   this.updatedraw = function() {
     ctx = myGameArea.context;
-    ctx.globalAlpha = cubelit(Wall[xat(this.x,this.y)].alpha);
+    ctx.globalAlpha = cubelit(Wall[nat(this.x,this.y)].alpha);
     ctx.drawImage(this.image,this.x-wid/2,this.y-wid/2,this.wid,this.wid);
   }
   this.updatelit = function() {
     // 计算 ModCirclit 方块的光影,max=10
     for (i=0;i<20;i++) {
     for (j=0;j<20;j++) {
-      x = xat(this.x-(i-10)*wd,this.y-(j-10)*wd);
-      if (iswall(map[x])) {
-        this.modlit[x] = lightlevel(this,Wall[x],100,1);
+      n = nat(this.x-(i-10)*wd,this.y-(j-10)*wd);
+      if (iswall(map[n])) {
+        this.modlit[n] = lightlevel(this,Wall[n],100,1);
       }
-      if (map[x]==0) {
-        this.modlit[x] = lightlevel(this,Wall[x],100,0);
+      if (map[n]==0) {
+        this.modlit[n] = lightlevel(this,Wall[n],100,0);
       }
     }}
   }
 
   this.crashWith = function(other) {
-    var myleft = this.x - this.wid/2;
-    var myright = this.x + this.wid/2;
-    var mytop = this.y - this.wid/2;
-    var mybottom = this.y + this.wid/2;
-    var otherleft = other.x - other.cubewid;
-    var otherright = other.x + other.cubewid;
-    var othertop = other.y - other.cubewid;
-    var otherbottom = other.y + other.cubewid;
-    var crash = true;
-    if ((mybottom < othertop) || (mytop > otherbottom) ||
-        (myright < otherleft) || (myleft > otherright)) {
-      crash = false;
-    }
-    return crash;
+    return crash(this,this.wid/2,other,other.cubewid);
   }
 }
 
@@ -302,7 +289,7 @@ function ProbeComponent(wid, color, x, y) {
     return(-1)
   }
   this.putdown = function(i) {
-    var wa = Wall[xat(this.x,this.y)];
+    var wa = Wall[nat(this.x,this.y)];
     this.mod[i].x = wa.x-1;
     this.mod[i].y = wa.y-1;
     this.mod[i].wait = true;
@@ -338,20 +325,7 @@ function ProbeComponent(wid, color, x, y) {
   }
   this.crashWith = function(other) {
     this.cubewid = this.wid/1.414214*Math.cos(Math.PI/4-Math.abs(this.ang%(Math.PI/2)));
-    var myleft = this.x - this.cubewid;
-    var myright = this.x + this.cubewid;
-    var mytop = this.y - this.cubewid;
-    var mybottom = this.y + this.cubewid;
-    var otherleft = other.x - (other.wid)/2;
-    var otherright = other.x + (other.wid)/2;
-    var othertop = other.y - (other.wid)/2;
-    var otherbottom = other.y + (other.wid)/2;
-    var crash = true;
-    if ((mybottom < othertop) || (mytop > otherbottom) || // 注意 y 轴正向向下
-        (myright < otherleft) || (myleft > otherright)) {
-      crash = false;
-    }
-    if (crash) {
+    if (crash(this,this.cubewid,other,other.wid/2)) {
       this.speed *= 0.5;
       if (Math.abs(this.x-other.x)>=Math.abs(this.y-other.y)) {
         this.x += 2*bool2sgn(this.x,other.x);
@@ -360,7 +334,6 @@ function ProbeComponent(wid, color, x, y) {
         this.y += 2*bool2sgn(this.y,other.y);
       }
     }
-    return crash;
   }
   this.relaxAng = function() {
     var relaxang = this.ang % (Math.PI/2);
@@ -392,7 +365,7 @@ function FoeComponent(radius, color, x, y) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, 2*Math.PI, false);
     ctx.fillStyle = color;
-    ctx.globalAlpha = cubelit(Wall[xat(this.x,this.y)].alpha);
+    ctx.globalAlpha = cubelit(Wall[nat(this.x,this.y)].alpha);
     ctx.fill();
     // ctx.lineWidth = 3;
     // ctx.strokeStyle = '#FF8000';
@@ -424,20 +397,7 @@ function FoeComponent(radius, color, x, y) {
     }
   }
   this.crashWith = function(other) {
-    var myleft = this.x - this.r;
-    var myright = this.x + this.r;
-    var mytop = this.y - this.r;
-    var mybottom = this.y + this.r;
-    var otherleft = other.x - (other.wid)/1.5;
-    var otherright = other.x + (other.wid)/1.5;
-    var othertop = other.y - (other.wid)/1.5;
-    var otherbottom = other.y + (other.wid)/1.5;
-    var crash = true;
-    if ((mybottom < othertop) || (mytop > otherbottom) || // 注意 y 轴正向向下
-        (myright < otherleft) || (myleft > otherright)) {
-      crash = false;
-    }
-    if (crash) {
+    if (crash(this,this.r,other,(other.wid)/1.5)) {
       if (Math.abs(this.x-other.x)>=Math.abs(this.y-other.y)) {
         this.x += 2*bool2sgn(this.x,other.x);
       }
@@ -445,7 +405,6 @@ function FoeComponent(radius, color, x, y) {
         this.y += 2*bool2sgn(this.y,other.y);
       }
     }
-    return crash;
   }
 }
 
@@ -503,7 +462,7 @@ function updateGameArea() {
   myGameArea.frameNo++;
   myGameArea.clear();
 
-  for (x in map) {Wall[x].update(x)}
+  for (n in map) {Wall[n].update(n)}
 
   ShootFoe.newPos(1); // 敌人速度比 Probe 慢
   ShootFoe.update();
@@ -531,19 +490,19 @@ function updateGameArea() {
   if (myGameArea.keys && myGameArea.keys[39]) {Probe1.angspeed = 4}
   if (myGameArea.keys && myGameArea.keys[38]) {Probe1.speed = 1.5} // up
   if (myGameArea.keys && myGameArea.keys[40]) {Probe1.speed = -1.5}
-  for (i=0;i<3;i++) {
-    if (myGameArea.keys && myGameArea.keys[49+i]) {Probe1.putdown(i)}
+  for (n=0;n<3;n++) {
+    if (myGameArea.keys && myGameArea.keys[49+n]) {Probe1.putdown(n)}
   }
 
   if(Probe1.speed != 0 || Probe1.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
 
 
   // Probe 撞墙检测
-  var loc = xat(Probe1.x,Probe1.y);
+  var loc = nat(Probe1.x,Probe1.y);
   for (i=-1;i<=1;i++) { for (j=-1;j<=1;j++) {
-    var xtest = loc+i*iwd+j;
-    if(iswall(map[xtest])) {
-      Probe1.crashWith(Wall[xtest]);
+    var ntest = loc+i*iwd+j;
+    if(iswall(map[ntest])) {
+      Probe1.crashWith(Wall[ntest]);
       Probe1.relaxAng();
     }
   }}
@@ -599,7 +558,7 @@ function lightlevel(source,target,max,highlight) {
 }
 
 
-function cubelit(maplit) { // 实体直接从地板获得光
+function cubelit(maplit) { // 实体直接从地板获得光照级别
   if (maplit>0.25) {return 1}
   else if (maplit>0.1) {return maplit*1.5}
   else {return(maplit)}
@@ -622,13 +581,13 @@ function iswallinline(ax,ay,bx,by) {
   return(flag)
 }
 
-function xat(x,y) {
+function nat(x,y) {
   var j = Math.floor(x/wd); // 用 floor 才能照亮右下方的墙…
   var i = Math.floor(y/wd);
   return(i*iwd+j)
 }
 function idat(x,y) {
-  return(map[xat(x,y)])
+  return(map[nat(x,y)])
 }
 
 function iswall(id) {
@@ -663,5 +622,20 @@ function dot(ax,ay,bx,by,br) {
   return(ax*bx+ay*by)
 }
 
-
+function crash(my, myhwid, other, otherhwid) {
+    var myleft = my.x - myhwid;
+    var myright = my.x + myhwid;
+    var mytop = my.y - myhwid;
+    var mybottom = my.y + myhwid;
+    var otherleft = other.x - otherhwid;
+    var otherright = other.x + otherhwid;
+    var othertop = other.y - otherhwid;
+    var otherbottom = other.y + otherhwid;
+    var crash = true;
+    if ((mybottom < othertop) || (mytop > otherbottom) ||
+        (myright < otherleft) || (myleft > otherright)) {
+      crash = false;
+    }
+    return crash;
+  }
 
