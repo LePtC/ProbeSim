@@ -116,7 +116,7 @@ function startGame() {
     }
   }
 
-  ModNull = new ModComponent(wd+2, 0, wd/2, wd/2);
+  ModNull = new ModComponent(wd+2, 0, -20, -20);
   ModCirclit1 = new ModComponent(wd+2, 1, 120+wd/2, 230+wd/2);
   ModCirclit2 = new ModComponent(wd+2, 1, 420+wd/2, 120+wd/2);
   ModCirclit3 = new ModComponent(wd+2, 1, 320+wd/2, 320+wd/2);
@@ -236,7 +236,6 @@ function ModComponent(wid, type, x, y) {
       } // else 提示插槽已满
     } else if (this.wait) {
       this.updatedraw();
-      if (type==1) {this.updatelit()}
       if (!this.crashWith(Probe1)) {
         this.wait = false;
         this.exist = -1;
@@ -307,6 +306,7 @@ function ProbeComponent(wid, color, x, y) {
     this.mod[i].x = wa.x-1;
     this.mod[i].y = wa.y-1;
     this.mod[i].wait = true;
+    if (this.mod[i].type==1) {this.mod[i].updatelit()}
     this.mod[i] = ModNull;
   }
   this.update = function() {
