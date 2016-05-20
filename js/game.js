@@ -99,6 +99,7 @@ var ModHacker;
 // 动作插件 -1 拖车 -2 机枪 -3 陷阱
 
 var SDprobemove;
+var SDshoot;
 
 
 
@@ -145,6 +146,7 @@ function startGame() {
   FoeHampe = new FoeCom(5, 3, 310, 300);
 
   SDprobemove = new Sound("sound/probemove.wav");
+  SDshoot = new Sound("sound/shoot.wav");
 
   myGameArea.start();
 }
@@ -399,6 +401,7 @@ function FoeCom(radius, type, x, y) {
           var empty = 0;
           while (BuList[empty] != null) {empty++}
           BuList[empty] = new BuCom(this.x,this.y,angdx,angdy,empty);
+          SDshoot.play();
         }
       }
       var dr = getr(angdx,angdy);
@@ -510,7 +513,7 @@ function InfoCom(host, x, y) {
 
 
 function Sound(src) {
-  // 造两个声音对象以解决循环播放的顿歇
+  // 造两个声音对象以解决循环播放的间歇
   this.sound1 = document.createElement("audio");
   this.sound1.src = src;
   this.sound1.setAttribute("preload", "auto");
@@ -518,20 +521,22 @@ function Sound(src) {
   this.sound1.style.display = "none";
   document.body.appendChild(this.sound1);
 
-  this.sound2 = document.createElement("audio");
-  this.sound2.src = src;
-  this.sound2.setAttribute("preload", "auto");
-  this.sound2.setAttribute("controls", "none");
-  this.sound2.style.display = "none";
-  document.body.appendChild(this.sound2);
+  // this.sound2 = document.createElement("audio");
+  // this.sound2.src = src;
+  // this.sound2.setAttribute("preload", "auto");
+  // this.sound2.setAttribute("controls", "none");
+  // this.sound2.style.display = "none";
+  // document.body.appendChild(this.sound2);
 
   this.play = function(){
-    if (myGameArea.frameNo % 20 >10) {this.sound1.play();}
-    else {this.sound2.play();}
+    // if (myGameArea.frameNo % 20 >10) {
+      this.sound1.play();
+    // }
+    // else {this.sound2.play();}
   }
   this.stop = function(){
     this.sound1.pause();
-    this.sound2.pause();
+    // this.sound2.pause();
   }
 }
 
