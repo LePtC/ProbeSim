@@ -89,9 +89,7 @@ var FoeHampe;
 var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png");
 // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
 var ModNull; // 我需要一个空对象
-var ModCirclit1;
-var ModCirclit2;
-var ModCirclit3;
+var ModCirclit = new Array();
 var ModLifesen1;
 var ModLifesen2;
 var ModLifesen3;
@@ -125,21 +123,21 @@ function startGame() {
   }
 
   ModNull = new ModCom(wd+2, 0, -20, -20);
-  ModCirclit1 = new ModCom(wd+2, 1, 120+wd/2, 230+wd/2);
-  ModCirclit2 = new ModCom(wd+2, 1, 420+wd/2, 120+wd/2);
-  ModCirclit3 = new ModCom(wd+2, 1, 320+wd/2, 320+wd/2);
+  Probe1 = new ProbeCom(15, "#C59D0D", 20, 30);
+  Probe1.ang = Math.PI / 2;
+  Probe1Info = new InfoCom(Probe1, 16, 250);
+
+  // 母舰光,干脆用吃不到的 LitMod 代替吧
+  ModCirclit[0] = new ModCom(wd+2, 1, 40+wd/2, 90+wd/2);
+  ModCirclit[1] = new ModCom(wd+2, 1, 120+wd/2, 230+wd/2);
+  ModCirclit[2] = new ModCom(wd+2, 1, 420+wd/2, 120+wd/2);
+  ModCirclit[3] = new ModCom(wd+2, 1, 320+wd/2, 320+wd/2);
   ModLifesen1 = new ModCom(wd+2, 2, 170+wd/2, 70+wd/2);
   ModLifesen2 = new ModCom(wd+2, 2, 170+wd/2, 100+wd/2);
   ModLifesen3 = new ModCom(wd+2, 2, 170+wd/2, 130+wd/2);
   ModHacker = new ModCom(wd+2, 3, 370+wd/2, 70+wd/2);
 
-  ModCirclit1.updatelit();
-  ModCirclit2.updatelit();
-  ModCirclit3.updatelit();
-
-  Probe1 = new ProbeCom(15, "#C59D0D", 20, 30);
-  Probe1.ang = Math.PI / 2;
-  Probe1Info = new InfoCom(Probe1, 16, 250);
+  for (n in ModCirclit) {ModCirclit[n].updatelit()}
 
   FoeShoot1 = new FoeCom(6, 1, 500, 200);
   FoeShoot2 = new FoeCom(6, 1, 300, 300);
@@ -150,6 +148,8 @@ function startGame() {
   SDshoot = new Sound("sound/shoot.wav");
   SDexplode = new Sound("sound/explode.wav");
 
+  myGameArea.x = 0; // 解决哪儿都没点的 bug
+  myGameArea.y = 0;
   myGameArea.start();
 }
 
@@ -224,12 +224,10 @@ function WallCom(wid, color, x, y) {
     if (iswall(map[n])) {
       if (Probe1.modnum(3)>0) {this.alpha = 0.8}
       else {
-        this.alpha = cutone(lightlevel(Probe1,this,litmax[Probe1.modnum(1)],1)+
-          ModCirclit1.modlit[n]+ModCirclit2.modlit[n]+ModCirclit3.modlit[n]);
+        this.alpha = cutone(lightlevel(Probe1,this,litmax[Probe1.modnum(1)],1)+modlitsum(n));
       }
     } else { // if (map[n]==0)
-      this.alpha = cutone(lightlevel(Probe1,this,litmax[Probe1.modnum(1)],0)+
-        ModCirclit1.modlit[n]+ModCirclit2.modlit[n]+ModCirclit3.modlit[n]);
+      this.alpha = cutone(lightlevel(Probe1,this,litmax[Probe1.modnum(1)],0)+modlitsum(n));
     }
     ctx = myGameArea.context;
     ctx.fillStyle = color;
@@ -539,7 +537,7 @@ function InfoCom(host, x, y) {
   }
   this.clicked = function(i) {
     var vec = new vecCom(x+30+16*i+wd/2+1,y-5+wd/2+1);
-    return(crash(myGameArea,2,vec,wd/2+1));
+    return(crash(vec,wd/2+1,myGameArea,2));
   }
 }
 
@@ -582,9 +580,7 @@ function updateGameArea() {
 
   for (n in map) {Wall[n].update(n)}
 
-  ModCirclit1.update();
-  ModCirclit2.update();
-  ModCirclit3.update();
+  for (n in ModCirclit) {ModCirclit[n].update()}
   ModLifesen1.update();
   ModLifesen2.update();
   ModLifesen3.update();
@@ -740,4 +736,10 @@ function crash(my, myhwid, other, otherhwid) {
 function vecCom(x,y) {
   this.x = x;
   this.y = y;
+}
+
+function modlitsum(n) {
+  var sum = 0;
+  for (x in ModCirclit) {sum += ModCirclit[x].modlit[n]}
+  return(sum)
 }
