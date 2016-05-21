@@ -141,8 +141,8 @@ function startGame() {
   Probe1.ang = Math.PI / 2;
   Probe1Info = new InfoCom(Probe1, 16, 250);
 
-  FoeShoot1 = new FoeCom(7, 1, 500, 200);
-  FoeShoot2 = new FoeCom(7, 1, 300, 300);
+  FoeShoot1 = new FoeCom(6, 1, 500, 200);
+  FoeShoot2 = new FoeCom(6, 1, 300, 300);
   FoeCreep = new FoeCom(7, 2, 500, 500);
   FoeHampe = new FoeCom(5, 3, 310, 300);
 
@@ -167,15 +167,34 @@ var myGameArea = {
     this.interval = setInterval(updateGameArea, 40); // 每 40th 毫秒 (25 fps)
 
     this.canvas.style.cursor = "crosshair";
-    window.addEventListener('mousemove', function (e) {
+    window.addEventListener('mousedown', function (e) { // mousemove
+      myGameArea.x = e.pageX; // 点按钮用
+      myGameArea.y = e.pageY;
+      if (!crash(myGameArea,2,Probe1Info,wd*5)) {
+        myGameArea.xc = e.pageX; // cache, 导向用
+        myGameArea.yc = e.pageY;
+      }
+    })
+    window.addEventListener('mouseup', function (e) {
+      myGameArea.x = false;
+      myGameArea.y = false;
+    })
+    // window.addEventListener('touchmove', function (e) {
+    //   myGameArea.x = e.touches[0].screenX;
+    //   myGameArea.y = e.touches[0].screenY;
+    // })
+    window.addEventListener('touchstart', function (e) {
       myGameArea.x = e.pageX;
       myGameArea.y = e.pageY;
+      if (!crash(myGameArea,2,Probe1Info,wd*5)) {
+        myGameArea.xc = e.pageX;
+        myGameArea.yc = e.pageY;
+      }
     })
-    window.addEventListener('touchmove', function (e) {
-      myGameArea.x = e.touches[0].screenX;
-      myGameArea.y = e.touches[0].screenY;
+    window.addEventListener('touchend', function (e) {
+      myGameArea.x = false;
+      myGameArea.y = false;
     })
-
     window.addEventListener('keydown', function (e) {
       e.preventDefault();
       myGameArea.keys = (myGameArea.keys || []);
@@ -496,10 +515,11 @@ function BuCom(x, y, dx, dy, index) {
 
 
 function InfoCom(host, x, y) {
-  // this.host = Probe1;
-  // this.x = x;
-  // this.y = y;
-  this.update =function() {
+  this.host = host;
+  this.x = x+wd*3.5; // 记录的是中心点
+  this.y = y+wd;
+  // this.modimg = new Array(); // 作按钮用
+  this.update = function() {
     ctx = myGameArea.context;
     ctx.globalAlpha = 1;
     ctx.fillStyle = host.color;
@@ -516,6 +536,10 @@ function InfoCom(host, x, y) {
       img.src = ModImg[host.mod[i].type];
       ctx.drawImage(img,x+30+16*i,y-5,wd+2,wd+2);
     }
+  }
+  this.clicked = function(i) {
+    var vec = new vecCom(x+30+16*i+wd/2+1,y-5+wd/2+1);
+    return(crash(myGameArea,2,vec,wd/2+1));
   }
 }
 
@@ -558,6 +582,14 @@ function updateGameArea() {
 
   for (n in map) {Wall[n].update(n)}
 
+  ModCirclit1.update();
+  ModCirclit2.update();
+  ModCirclit3.update();
+  ModLifesen1.update();
+  ModLifesen2.update();
+  ModLifesen3.update();
+  ModHacker.update();
+
   FoeShoot1.update();
   FoeShoot2.update();
   FoeCreep.update();
@@ -566,9 +598,9 @@ function updateGameArea() {
   Probe1.angspeed = 0;
   Probe1.speed = 0;
 
-  if (myGameArea.x && myGameArea.y) { // myGameArea.touchX && myGameArea.touchY
-    var dx = myGameArea.x-Probe1.x;
-    var dy = Probe1.y-myGameArea.y; // y 轴指向下
+  if (myGameArea.xc && myGameArea.yc) { // myGameArea.touchX && myGameArea.touchY
+    var dx = myGameArea.xc-Probe1.x;
+    var dy = Probe1.y-myGameArea.yc; // y 轴指向下
     var rot = Probe1.ang;
     var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
     var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
@@ -584,11 +616,11 @@ function updateGameArea() {
   if (myGameArea.keys && myGameArea.keys[38]) {Probe1.speed = 1.5} // up
   if (myGameArea.keys && myGameArea.keys[40]) {Probe1.speed = -1.5}
   for (n=0;n<3;n++) {
-    if (myGameArea.keys && myGameArea.keys[49+n]) {Probe1.putdown(n)}
+    if (myGameArea.keys && myGameArea.keys[49+n] ||
+      Probe1Info.clicked(n)) {Probe1.putdown(n)}
   }
 
   if(Probe1.speed != 0 || Probe1.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
-
 
   // Probe 撞墙检测
   var loc = nat(Probe1.x,Probe1.y);
@@ -599,14 +631,6 @@ function updateGameArea() {
       Probe1.relaxAng();
     }
   }}
-
-  ModCirclit1.update();
-  ModCirclit2.update();
-  ModCirclit3.update();
-  ModLifesen1.update();
-  ModLifesen2.update();
-  ModLifesen3.update();
-  ModHacker.update();
 
   Probe1.update();
   Probe1Info.update();
@@ -713,3 +737,7 @@ function crash(my, myhwid, other, otherhwid) {
   } else {return(true)}
 }
 
+function vecCom(x,y) {
+  this.x = x;
+  this.y = y;
+}
