@@ -73,7 +73,6 @@ var map = new Array(
 
 
 var Probe1;
-var Probe1Info;
 
 var FoeType = new Array("#fff","#222","red","green"); // 1 Shooter 2 Creeper 3 Hamper
 var FoeSpeed = new Array(0,0.5,1.2,1.3);
@@ -120,7 +119,7 @@ function startGame() {
   ModNull = new ModCom(wd+2, 0, -20, -20);
   Probe1 = new ProbeCom(15, "#C59D0D", 20, 30);
   Probe1.ang = Math.PI / 2;
-  Probe1Info = new InfoCom(Probe1, 16, 250);
+  Probe1.Info = new InfoCom(Probe1, 16, 250);
 
   // 母舰光,干脆用吃不到的 LitMod 代替吧
   ModCirclit[0] = new ModCom(wd+2, 1, 40+wd/2, 90+wd/2);
@@ -165,13 +164,13 @@ var myGameArea = {
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 40); // 每 40th 毫秒 (25 fps)
+    this.interval = setInterval(updateGameArea, 25); // 每 25th 毫秒 (40 fps)
 
     this.canvas.style.cursor = "crosshair";
     window.addEventListener('mousedown', function (e) { // mousemove
       myGameArea.x = e.pageX; // 点按钮用
       myGameArea.y = e.pageY;
-      if (!crash(myGameArea,2,Probe1Info,wd*5)) {
+      if (!crash(myGameArea,2,Probe1.Info,wd*5)) {
         myGameArea.xc = e.pageX; // cache, 导向用
         myGameArea.yc = e.pageY;
       }
@@ -187,7 +186,7 @@ var myGameArea = {
     window.addEventListener('touchstart', function (e) {
       myGameArea.x = e.pageX;
       myGameArea.y = e.pageY;
-      if (!crash(myGameArea,2,Probe1Info,wd*5)) {
+      if (!crash(myGameArea,2,Probe1.Info,wd*5)) {
         myGameArea.xc = e.pageX;
         myGameArea.yc = e.pageY;
       }
@@ -309,6 +308,7 @@ function ProbeCom(wid, color, x, y) {
   this.y = y;
   this.color = color;
   this.health = 99;
+  this.Info = null;
   this.mod = new Array(ModNull,ModNull,ModNull); // 一个 Probe 现最多搭载 3 个插件, 以体积增大为惩罚
   this.modnum = function(id) {
     return((this.mod[0].type==id)+(this.mod[1].type==id)+(this.mod[2].type==id))
@@ -349,6 +349,7 @@ function ProbeCom(wid, color, x, y) {
       ctx.fillRect(this.x-w, this.y-w, 1 , 2*w); // 左
       ctx.fillRect(this.x+w, this.y-w, 1 , 2*w); // 右
     }
+    this.Info.update();
   }
   this.newPos = function() {
     this.ang += this.angspeed * Math.PI / 180;
@@ -586,47 +587,53 @@ function updateGameArea() {
 
   for (n in FoeList) {FoeList[n].update()}
 
-  Probe1.angspeed = 0;
-  Probe1.speed = 0;
+  Control(Probe1);
+  Probe1.update();
+
+  for (n in BuList) { if (BuList[n] != null) {BuList[n].update()} }
+}
+
+
+
+function Control(Prob) {
+
+  Prob.angspeed = 0;
+  Prob.speed = 0;
 
   if (myGameArea.xc && myGameArea.yc) { // myGameArea.touchX && myGameArea.touchY
-    var dx = myGameArea.xc-Probe1.x;
-    var dy = Probe1.y-myGameArea.yc; // y 轴指向下
-    var rot = Probe1.ang;
+    var dx = myGameArea.xc-Prob.x;
+    var dy = Prob.y-myGameArea.yc; // y 轴指向下
+    var rot = Prob.ang;
     var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
     var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
 
-    if(dxp>4) {Probe1.angspeed = 4}
-    else if(dxp<-4) {Probe1.angspeed = -4}
-    if(dyp>4) {Probe1.speed = 1.5}
-    else if(dyp<-4) {Probe1.speed = -1.5}
+    if(dxp>4) {Prob.angspeed = 4}
+    else if(dxp<-4) {Prob.angspeed = -4}
+    if(dyp>4) {Prob.speed = 1.5}
+    else if(dyp<-4) {Prob.speed = -1.5}
   }
 
-  if (myGameArea.keys && myGameArea.keys[37]) {Probe1.angspeed = -4} // left
-  if (myGameArea.keys && myGameArea.keys[39]) {Probe1.angspeed = 4}
-  if (myGameArea.keys && myGameArea.keys[38]) {Probe1.speed = 1.5} // up
-  if (myGameArea.keys && myGameArea.keys[40]) {Probe1.speed = -1.5}
+  if (myGameArea.keys && myGameArea.keys[37]) {Prob.angspeed = -4} // left
+  if (myGameArea.keys && myGameArea.keys[39]) {Prob.angspeed = 4}
+  if (myGameArea.keys && myGameArea.keys[38]) {Prob.speed = 1.5} // up
+  if (myGameArea.keys && myGameArea.keys[40]) {Prob.speed = -1.5}
   for (n=0;n<3;n++) {
     if (myGameArea.keys && myGameArea.keys[49+n] ||
-      Probe1Info.clicked(n)) {Probe1.putdown(n)}
+      Prob.Info.clicked(n)) {Prob.putdown(n)}
   }
 
-  if(Probe1.speed != 0 || Probe1.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
+  if(Prob.speed != 0 || Prob.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
 
   // Probe 撞墙检测
-  var loc = nat(Probe1.x,Probe1.y);
+  var loc = nat(Prob.x,Prob.y);
   for (i=-1;i<=1;i++) { for (j=-1;j<=1;j++) {
     var ntest = loc+i*iwd+j;
     if(iswall(map[ntest])) {
-      Probe1.crashWith(Wall[ntest]);
-      Probe1.relaxAng();
+      Prob.crashWith(Wall[ntest]);
+      Prob.relaxAng();
     }
   }}
 
-  Probe1.update();
-  Probe1Info.update();
-
-  for (n in BuList) { if (BuList[n] != null) {BuList[n].update()} }
 }
 
 
