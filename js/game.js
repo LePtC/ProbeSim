@@ -1,9 +1,6 @@
 
 var wd = 10; // 墙宽
 var iwd = 80; // 每行网格数
-var litmax = new Array(250,250,400,600); // 最远光照半径
-var lifmax =  new Array(0,200,350,500); // 生命探测半宽
-
 
 // 将字母翻译为键码
 var A=65,B=66,C=67,D=68,E=69,F=70,G=71,H=72,I=73,J=74,K=75,L=76,M=77,N=78,O=79,P=80,Q=81,R=82,S=83,T=84,U=85,V=86,W=87,X=88,Y=89,Z=90;
@@ -83,12 +80,16 @@ var FoeSpeed = new Array(0,0.5,1.2,1.3);
 var FoeList =  new Array(); // 记录敌人本体
 var BuList = new Array(); // 记录子弹对象
 
-var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png","","img/ModHeal.png");
+var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png","img/ModShield.png","img/ModHeal.png");
 // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 5 治疗 9 母舰芯片
 var ModNull; // 我需要一个空对象
 var ModCirclit = new Array();
 var ModList = new Array(); // 除 Circlit 以外的 mod 本体
 // 动作插件 -1 拖车 -2 机枪 -3 陷阱
+
+var litmax = new Array(250,250,400,600); // 最远光照半径
+var lifmax =  new Array(0,200,350,500); // 生命探测半宽
+var hurt = new Array(10,5,2,1); // 护盾减少伤害
 
 var SDprobemove;
 var SDshoot;
@@ -130,7 +131,10 @@ function startGame() {
   ModList[1] = new ModCom(wd+2, 2, 210+wd/2, 30+wd/2); // ModLifesen2
   ModList[2] = new ModCom(wd+2, 2, 470+wd/2, 230+wd/2); // ModLifesen3
   ModList[3] = new ModCom(wd+2, 3, 670+wd/2, 570+wd/2); // ModHacker
-  ModList[4] = new ModCom(wd+2, 5, 60+wd/2, 80+wd/2); // ModHeal
+  ModList[4] = new ModCom(wd+2, 4, 60+wd/2, 60+wd/2); // ModShield
+  ModList[5] = new ModCom(wd+2, 4, 670+wd/2, 60+wd/2); // ModShield
+  ModList[5] = new ModCom(wd+2, 4, 300+wd/2, 300+wd/2); // ModShield
+  ModList[6] = new ModCom(wd+2, 5, 60+wd/2, 80+wd/2); // ModHeal
 
   for (n in ModCirclit) {ModCirclit[n].updatelit()}
 
@@ -304,7 +308,7 @@ function ProbeCom(wid, color, x, y) {
   this.x = x;
   this.y = y;
   this.color = color;
-  this.health = 10;
+  this.health = 99;
   this.mod = new Array(ModNull,ModNull,ModNull); // 一个 Probe 现最多搭载 3 个插件, 以体积增大为惩罚
   this.modnum = function(id) {
     return((this.mod[0].type==id)+(this.mod[1].type==id)+(this.mod[2].type==id))
@@ -421,7 +425,7 @@ function FoeCom(radius, type, x, y) {
         }
         if (this.type == 2) {
           if (getr2(this.x-Probe1.x,this.y-Probe1.y) < 9*wd*wd) {
-            Probe1.health -= 5;
+            Probe1.health -= 5*hurt[Probe1.modnum(4)];
             SDexplode.play();
             this.x = 20; // 先假装重新刷新一个吧
             this.y = 590;
@@ -489,7 +493,7 @@ function BuCom(x, y, dx, dy, index) {
 
     // 子弹击中 Probe 检测
     if (crash(this,2,Probe1,Probe1.wid/2)) {
-      Probe1.health --;
+      Probe1.health -= hurt[Probe1.modnum(4)];
       BuList[index] = null;
       return 0; // 提前结束函数
     }
