@@ -133,8 +133,8 @@ function startGame() {
   ModList[3] = new ModCom(wd+2, 3, 670+wd/2, 570+wd/2); // ModHacker
   ModList[4] = new ModCom(wd+2, 4, 60+wd/2, 60+wd/2); // ModShield
   ModList[5] = new ModCom(wd+2, 4, 670+wd/2, 60+wd/2); // ModShield
-  ModList[5] = new ModCom(wd+2, 4, 300+wd/2, 300+wd/2); // ModShield
-  ModList[6] = new ModCom(wd+2, 5, 60+wd/2, 80+wd/2); // ModHeal
+  ModList[6] = new ModCom(wd+2, 4, 300+wd/2, 300+wd/2); // ModShield
+  ModList[7] = new ModCom(wd+2, 5, 60+wd/2, 80+wd/2); // ModHeal
 
   for (n in ModCirclit) {ModCirclit[n].updatelit()}
 
