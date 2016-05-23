@@ -86,9 +86,9 @@ var ModCirclit = new Array();
 var ModList = new Array(); // 除 Circlit 以外的 mod 本体
 // 动作插件 -1 拖车 -2 机枪 -3 陷阱
 
-var litmax = new Array(250,250,400,600); // 最远光照半径
-var lifmax =  new Array(0,200,350,500); // 生命探测半宽
-var hurt = new Array(10,5,2,1); // 护盾减少伤害
+var litmax = new Array(250,250,400,500,600,700); // 最远光照半径
+var lifmax =  new Array(0,200,350,450,550,650); // 生命探测半宽
+var hurt = new Array(10,6,3,2,1,1,1); // 护盾减少伤害
 
 var SDprobemove;
 var SDshoot;
@@ -309,25 +309,28 @@ function ProbeCom(wid, color, x, y) {
   this.color = color;
   this.health = 99;
   this.Info = null;
-  this.mod = new Array(ModNull,ModNull,ModNull); // 一个 Probe 现最多搭载 3 个插件, 以体积增大为惩罚
+  this.mod = new Array(ModNull,ModNull,ModNull,ModNull,ModNull); // 一个 Probe 现最多搭载 5 个插件, 以体积增大为惩罚?
   this.modnum = function(id) {
-    return((this.mod[0].type==id)+(this.mod[1].type==id)+(this.mod[2].type==id))
+    var sum = 0;
+    for (i=0;i<5;i++) {sum+=(this.mod[i].type==id)}
+    return(sum)
   }
   this.findempty = function() {
-    if(this.mod[0].type==0){return 0}
-    if(this.mod[1].type==0){return 1}
-    if(this.mod[2].type==0){return 2}
+    for (i=0;i<5;i++) {if(this.mod[i].type==0){return i}}
     return(-1)
   }
   this.putdown = function(i) {
-    var wa = Wall[nat(this.x,this.y)];
-    this.mod[i].x = wa.x-1;
-    this.mod[i].y = wa.y-1;
-    this.mod[i].wait = true;
-    if (this.mod[i].type==1) {this.mod[i].updatelit()}
-    this.mod[i] = ModNull;
+    if (this.mod[i] != ModNull) {
+      var wa = Wall[nat(this.x,this.y)];
+      this.mod[i].x = wa.x-1;
+      this.mod[i].y = wa.y-1;
+      this.mod[i].wait = true;
+      if (this.mod[i].type==1) {this.mod[i].updatelit()}
+      this.mod[i] = ModNull;
+    }
   }
   this.update = function() {
+    if (this.health<0) {this.reBirth()}
     this.newPos();
     // this.wid = wid+2*((this.mod[0]!=0)+(this.mod[1]!=0)+(this.mod[2]!=0));
     ctx = myGameArea.context;
@@ -377,6 +380,13 @@ function ProbeCom(wid, color, x, y) {
       if (relaxang < -Math.PI/4) {relax = -1} else {relax = 1}
     }
     this.ang += 2*relax * Math.PI / 180;
+  }
+  this.reBirth = function() {
+    for (i in this.mod) {this.putdown(i)}
+    this.x = x;
+    this.y = y;
+    this.ang = Math.PI/2;
+    this.health = 99;
   }
 }
 
@@ -529,16 +539,16 @@ function InfoCom(host, x, y) {
 
     ctx.fillStyle = "#fff";
     ctx.font="20px Verdana";
-    ctx.fillText(host.health.toString(),x,y);
+    ctx.fillText(host.health.toString(),x+20,y+7);
 
     for (i in host.mod) {
       var img = new Image();
       img.src = ModImg[host.mod[i].type];
-      ctx.drawImage(img,x+30+16*i,y-5,wd+2,wd+2);
+      ctx.drawImage(img,x-8+16*i,y+15,wd+2,wd+2);
     }
   }
   this.clicked = function(i) {
-    var vec = new vecCom(x+30+16*i+wd/2+1,y-5+wd/2+1);
+    var vec = new vecCom(x-8+16*i+wd/2+1,y+15+wd/2+1);
     return(crash(vec,wd/2+1,myGameArea,2));
   }
 }
@@ -617,7 +627,7 @@ function Control(Prob) {
   if (myGameArea.keys && myGameArea.keys[39]) {Prob.angspeed = 4}
   if (myGameArea.keys && myGameArea.keys[38]) {Prob.speed = 1.5} // up
   if (myGameArea.keys && myGameArea.keys[40]) {Prob.speed = -1.5}
-  for (n=0;n<3;n++) {
+  for (n=0;n<5;n++) {
     if (myGameArea.keys && myGameArea.keys[49+n] ||
       Prob.Info.clicked(n)) {Prob.putdown(n)}
   }
