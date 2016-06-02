@@ -427,6 +427,9 @@ function FoeCom(radius, type, x, y, exist) {
     if (!iswallinline(Probe1.x,Probe1.y,this.x,this.y)) {
       var angdx = Probe1.x-this.x;
       var angdy = Probe1.y-this.y;
+      var dr = getr(angdx,angdy);
+      angdx = angdx/dr;
+      angdy = angdy/dr;
       if (myGameArea.frameNo % 25 == 0) {
         if (this.type != 3) {
           this.pursuerandx = 40*Math.random()-20; // 追击方向加入随机涨落,除了hamper
@@ -435,7 +438,7 @@ function FoeCom(radius, type, x, y, exist) {
         if (this.type == 1) { // 每 0.5 秒生成新子弹
           var empty = 0;
           while (BuList[empty] != null) {empty++}
-          BuList[empty] = new BuCom(this.x,this.y,angdx,angdy,empty);
+          BuList[empty] = new BuCom(this.x+this.r*angdx+3,this.y+this.r*angdy+3,angdx,angdy,empty); // 防止打死自己 2333
           SDshoot.play();
         }
         if (this.type == 2) {
@@ -446,9 +449,8 @@ function FoeCom(radius, type, x, y, exist) {
           }
         }
       }
-      var dr = getr(angdx,angdy);
-      this.x += speed * (angdx+this.pursuerandx)/dr; // 距离越远涨落越小
-      this.y += speed * (angdy+this.pursuerandy)/dr;
+      this.x += speed * (angdx+this.pursuerandx/dr); // 距离越远涨落越小
+      this.y += speed * (angdy+this.pursuerandy/dr);
     } else {
       if (myGameArea.frameNo % 50 == 0) { // 每 1 秒随机改变方向
         if (Math.random()>0.2) {
@@ -497,9 +499,8 @@ function BuCom(x, y, dx, dy, index) {
   this.x = x;
   this.y = y;
   this.index = index;
-  var r = getr(dx,dy);
-  var dxn = 7*dx/r+(Math.random()*2-1); // 线速度 7px/frame 出射角加入随机涨落
-  var dyn = 7*dy/r+(Math.random()*2-1);
+  var dxn = 7*dx+(Math.random()*2-1); // 线速度 7px/frame 出射角加入随机涨落
+  var dyn = 7*dy+(Math.random()*2-1);
   this.update = function() {
     this.x += dxn;
     this.y += dyn;
