@@ -77,18 +77,20 @@ var Probe1;
 var FoeType = new Array("#fff","#222","red","green"); // 1 Shooter 2 Creeper 3 Hamper
 var FoeSpeed = new Array(0,0.5,1.2,1.3);
 var FoeList =  new Array(); // 记录敌人本体
+var FoeNull; // 我需要一个空对象
 var BuList = new Array(); // 记录子弹对象
+var FdropImg = new Array("img/0.png","img/ModBull.png","img/ModTrap.png","img/ModHeal.png"); // 敌人死亡掉落 -1 子弹 -2 陷阱 -3 治疗
 
-var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png","img/ModShield.png","img/ModHeal.png");
-// 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 5 治疗 9 母舰芯片
+var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png","img/ModShield.png");
+// 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
 var ModNull; // 我需要一个空对象
 var ModCirclit = new Array();
 var ModList = new Array(); // 除 Circlit 以外的 mod 本体
-// 动作插件 -1 拖车 -2 机枪 -3 陷阱
+
 
 var litmax = new Array(250,250,400,500,600,700); // 最远光照半径
 var lifmax =  new Array(0,200,350,450,550,650); // 生命探测半宽
-var hurt = new Array(10,6,3,2,1,1,1); // 护盾减少伤害
+var hurt = new Array(20,10,6,3,2,1,0); // 护盾减少伤害
 
 var SDprobemove;
 var SDshoot;
@@ -117,10 +119,6 @@ function startGame() {
   }
 
   ModNull = new ModCom(wd+2, 0, -20, -20);
-  Probe1 = new ProbeCom(15, "#C59D0D", 20, 30);
-  Probe1.ang = Math.PI / 2;
-  Probe1.Info = new InfoCom(Probe1, 16, 250);
-
   // 母舰光,干脆用吃不到的 LitMod 代替吧
   ModCirclit[0] = new ModCom(wd+2, 1, 40+wd/2, 90+wd/2);
   ModCirclit[1] = new ModCom(wd+2, 1, 620+wd/2, 60+wd/2);
@@ -133,16 +131,20 @@ function startGame() {
   ModList[4] = new ModCom(wd+2, 4, 60+wd/2, 60+wd/2); // ModShield
   ModList[5] = new ModCom(wd+2, 4, 670+wd/2, 60+wd/2); // ModShield
   ModList[6] = new ModCom(wd+2, 4, 300+wd/2, 300+wd/2); // ModShield
-  ModList[7] = new ModCom(wd+2, 5, 60+wd/2, 80+wd/2); // ModHeal
 
   for (n in ModCirclit) {ModCirclit[n].updatelit()}
 
-  FoeList[0] = new FoeCom(6, 1, 500, 30); // FoeShoot1
-  FoeList[1] = new FoeCom(6, 1, 500, 100); // FoeShoot2
-  FoeList[2] = new FoeCom(7, 2, 500, 500); // FoeCreep
-  FoeList[3] = new FoeCom(5, 3, 310, 300); // FoeHampe1
-  FoeList[4] = new FoeCom(5, 3, 320, 300); // FoeHampe2
-  FoeList[5] = new FoeCom(5, 3, 310, 310); // FoeHampe3
+  Probe1 = new ProbeCom(15, "#C59D0D", 20, 30);
+  Probe1.ang = Math.PI / 2;
+  Probe1.Info = new InfoCom(Probe1, 16, 250);
+
+  FoeNull = new ModCom(1, 0, -20, -20);
+  FoeList[0] = new FoeCom(6, 1, 500,  30, 0); // FoeShoot1
+  FoeList[1] = new FoeCom(6, 1, 500, 100, 1); // FoeShoot2
+  FoeList[2] = new FoeCom(7, 2, 500, 500, 2); // FoeCreep
+  FoeList[3] = new FoeCom(5, 3, 310, 300, 3); // FoeHampe1
+  FoeList[4] = new FoeCom(5, 3, 320, 300, 4); // FoeHampe2
+  FoeList[5] = new FoeCom(5, 3, 310, 310, 5); // FoeHampe3
 
   SDprobemove = new Sound("sound/probemove.wav");
   SDshoot = new Sound("sound/shoot.wav");
@@ -248,7 +250,7 @@ function ModCom(wid, type, x, y) {
   this.ang = "A";
   this.type = type;
   this.image = new Image();
-  this.image.src = ModImg[type];
+  this.image.src = (type>=0)?(ModImg[type]):(FdropImg[-type]);
   this.modlit = new Array(); // 静态光源只计算一次,存着重复用
   if (this.type == 1) {for (n in map) {this.modlit[n]=0}}
 
@@ -289,7 +291,6 @@ function ModCom(wid, type, x, y) {
       }
     }}
   }
-
   this.crashWith = function(other) {
     return crash(this,this.wid/2,other,other.cubewid);
   }
@@ -392,8 +393,9 @@ function ProbeCom(wid, color, x, y) {
 
 
 
-function FoeCom(radius, type, x, y) {
+function FoeCom(radius, type, x, y, exist) {
 
+  this.exist = exist; // 012 表示在 FoeList 中的 index
   this.r = radius;
   this.x = x;
   this.y = y;
@@ -402,21 +404,23 @@ function FoeCom(radius, type, x, y) {
   this.pursuerandx = 0;
   this.pursuerandy = 0;
   this.update = function() {
-    this.newPos();
-    ctx = myGameArea.context;
-    if (Probe1.modnum(2)>0 && Math.abs(Probe1.x-this.x)<=lifmax[Probe1.modnum(2)] && Math.abs(Probe1.y-this.y)<=lifmax[Probe1.modnum(2)]) {
-      ctx.fillStyle = "#28FF28";
-      ctx.globalAlpha = 1;
-      ctx.fillRect(this.x-2, this.y-2, 4, 4);
+    if (this.type != 0) {
+      this.newPos();
+      ctx = myGameArea.context;
+      if (Probe1.modnum(2)>0 && Math.abs(Probe1.x-this.x)<=lifmax[Probe1.modnum(2)] && Math.abs(Probe1.y-this.y)<=lifmax[Probe1.modnum(2)]) {
+        ctx.fillStyle = "#28FF28";
+        ctx.globalAlpha = 1;
+        ctx.fillRect(this.x-2, this.y-2, 4, 4);
+      }
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, 2*Math.PI, false);
+      ctx.fillStyle = FoeType[this.type];
+      ctx.globalAlpha = cubelit(Wall[nat(this.x,this.y)].alpha);
+      ctx.fill();
+      // ctx.lineWidth = 3;
+      // ctx.strokeStyle = '#FF8000';
+      // ctx.stroke();
     }
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, 2*Math.PI, false);
-    ctx.fillStyle = FoeType[this.type];
-    ctx.globalAlpha = cubelit(Wall[nat(this.x,this.y)].alpha);
-    ctx.fill();
-    // ctx.lineWidth = 3;
-    // ctx.strokeStyle = '#FF8000';
-    // ctx.stroke();
   }
   this.newPos = function() { // 追击速度
     var speed = FoeSpeed[this.type];
@@ -438,8 +442,7 @@ function FoeCom(radius, type, x, y) {
           if (getr2(this.x-Probe1.x,this.y-Probe1.y) < 9*wd*wd) {
             Probe1.health -= 5*hurt[Probe1.modnum(4)];
             SDexplode.play();
-            this.x = 20; // 先假装重新刷新一个吧
-            this.y = 590;
+            this.dead();
           }
         }
       }
@@ -479,6 +482,13 @@ function FoeCom(radius, type, x, y) {
       }
     }
   }
+  this.dead = function(other) {
+    ModList[ModList.length] = new ModCom(wd+2, -this.type, this.x, this.y);
+    this.x = -20;
+    this.y = -20;
+    this.type = 0;
+    FoeList[this.exist] = FoeNull;
+  }
 }
 
 
@@ -507,6 +517,15 @@ function BuCom(x, y, dx, dy, index) {
       Probe1.health -= hurt[Probe1.modnum(4)];
       BuList[index] = null;
       return 0; // 提前结束函数
+    }
+    // 子弹击中 Foe 检测
+    for (n in FoeList) {
+      var f = FoeList[n];
+      if (crash(this,2,f,f.r)) {
+        f.dead();
+        BuList[index] = null;
+        return 0;
+      }
     }
     // 子弹撞墙检测
     var loc = nat(this.x,this.y);
