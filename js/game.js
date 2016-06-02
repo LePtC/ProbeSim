@@ -77,7 +77,7 @@ var Probe1;
 var FoeType = new Array("#fff","#222","red","green"); // 1 Shooter 2 Creeper 3 Hamper
 var FoeSpeed = new Array(0,0.5,1.2,1.3);
 var FoeList =  new Array(); // 记录敌人本体
-var FoeNull; // 我需要一个空对象
+// var FoeNull;
 var BuList = new Array(); // 记录子弹对象
 var FdropImg = new Array("img/0.png","img/ModBull.png","img/ModTrap.png","img/ModHeal.png"); // 敌人死亡掉落 -1 子弹 -2 陷阱 -3 治疗
 
@@ -120,25 +120,25 @@ function startGame() {
 
   ModNull = new ModCom(wd+2, 0, -20, -20);
   // 母舰光,干脆用吃不到的 LitMod 代替吧
-  ModCirclit[0] = new ModCom(wd+2, 1, 40+wd/2, 90+wd/2);
-  ModCirclit[1] = new ModCom(wd+2, 1, 620+wd/2, 60+wd/2);
-  ModCirclit[2] = new ModCom(wd+2, 1, 320+wd/2, 320+wd/2);
-  ModCirclit[3] = new ModCom(wd+2, 1, 620+wd/2, 550+wd/2);
-  ModList[0] = new ModCom(wd+2, 2, 170+wd/2, 30+wd/2); // ModLifesen1
-  ModList[1] = new ModCom(wd+2, 2, 210+wd/2, 30+wd/2); // ModLifesen2
-  ModList[2] = new ModCom(wd+2, 2, 470+wd/2, 230+wd/2); // ModLifesen3
-  ModList[3] = new ModCom(wd+2, 3, 670+wd/2, 570+wd/2); // ModHacker
-  ModList[4] = new ModCom(wd+2, 4, 60+wd/2, 60+wd/2); // ModShield
-  ModList[5] = new ModCom(wd+2, 4, 670+wd/2, 60+wd/2); // ModShield
-  ModList[6] = new ModCom(wd+2, 4, 300+wd/2, 300+wd/2); // ModShield
+  ModCirclit[0] = new ModCom(wd+2, 1, 42, 90);
+  ModCirclit[1] = new ModCom(wd+2, 1, 622, 64);
+  ModCirclit[2] = new ModCom(wd+2, 1, 320, 322);
+  ModCirclit[3] = new ModCom(wd+2, 1, 622, 550);
+  ModList[0] = new ModCom(wd+2, 2, 172, 32); // ModLifesen1
+  ModList[1] = new ModCom(wd+2, 2, 214, 30); // ModLifesen2
+  ModList[2] = new ModCom(wd+2, 2, 470, 234); // ModLifesen3
+  ModList[3] = new ModCom(wd+2, 3, 674, 572); // ModHacker
+  ModList[4] = new ModCom(wd+2, 4, 62, 60); // ModShield
+  ModList[5] = new ModCom(wd+2, 4, 670, 62); // ModShield
+  ModList[6] = new ModCom(wd+2, 4, 302, 300); // ModShield
 
   for (n in ModCirclit) {ModCirclit[n].updatelit()}
 
-  Probe1 = new ProbeCom(15, "#C59D0D", 20, 30);
+  Probe1 = new ProbeCom(15, "#C59D0D", 320, 30);
   Probe1.ang = Math.PI / 2;
   Probe1.Info = new InfoCom(Probe1, 16, 250);
 
-  FoeNull = new ModCom(1, 0, -20, -20);
+  // FoeNull = new ModCom(1, 0, -20, -20);
   FoeList[0] = new FoeCom(6, 1, 500,  30, 0); // FoeShoot1
   FoeList[1] = new FoeCom(6, 1, 500, 100, 1); // FoeShoot2
   FoeList[2] = new FoeCom(7, 2, 500, 500, 2); // FoeCreep
@@ -166,7 +166,7 @@ var myGameArea = {
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 25); // 每 25th 毫秒 (40 fps)
+    this.interval = setInterval(updateGameArea, 20); // 每 20th 毫秒 (50 fps)
 
     this.canvas.style.cursor = "crosshair";
     window.addEventListener('mousedown', function (e) { // mousemove
@@ -322,9 +322,9 @@ function ProbeCom(wid, color, x, y) {
   }
   this.putdown = function(i) {
     if (this.mod[i] != ModNull) {
-      var wa = Wall[nat(this.x,this.y)];
-      this.mod[i].x = wa.x-1;
-      this.mod[i].y = wa.y-1;
+      // var wa = Wall[nat(this.x,this.y)];
+      this.mod[i].x = this.x;
+      this.mod[i].y = this.y;
       this.mod[i].wait = true;
       if (this.mod[i].type==1) {this.mod[i].updatelit()}
       this.mod[i] = ModNull;
@@ -484,10 +484,9 @@ function FoeCom(radius, type, x, y, exist) {
   }
   this.dead = function(other) {
     ModList[ModList.length] = new ModCom(wd+2, -this.type, this.x, this.y);
-    this.x = -20;
-    this.y = -20;
+    // this.x = -20; this.y = -20;
     this.type = 0;
-    FoeList[this.exist] = FoeNull;
+    // FoeList[this.exist] = FoeNull;
   }
 }
 
@@ -562,7 +561,8 @@ function InfoCom(host, x, y) {
 
     for (i in host.mod) {
       var img = new Image();
-      img.src = ModImg[host.mod[i].type];
+      var type = host.mod[i].type;
+      img.src = (type>=0)?(ModImg[type]):(FdropImg[-type]);;
       ctx.drawImage(img,x-8+16*i,y+15,wd+2,wd+2);
     }
   }
