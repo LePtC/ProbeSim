@@ -304,7 +304,8 @@ function ProbeCom(wid, color, x, y) {
 
   this.wid = wid;
   this.cubewid = wid;
-  this.speed = 0;
+  this.speed = 0; // 前进速度
+  this.rispeed = 0; // 右滑速度
   this.ang = 0;
   this.angspeed = 0;
   this.x = x;
@@ -334,7 +335,9 @@ function ProbeCom(wid, color, x, y) {
   }
   this.fire = function(i) {
     if (this.mod[i].type == -1) {
-      newbu(this.x,this.y,this.cubewid,Math.sin(this.ang),-Math.cos(this.ang));
+      if (myGameArea.frameNo % 5 == 0) {
+        newbu(this.x,this.y,this.cubewid,Math.sin(this.ang),-Math.cos(this.ang));
+      }
     }
   }
   this.update = function() {
@@ -364,8 +367,10 @@ function ProbeCom(wid, color, x, y) {
   }
   this.newPos = function() {
     this.ang += this.angspeed * Math.PI / 180;
-    this.x += this.speed * Math.sin(this.ang);
-    this.y -= this.speed * Math.cos(this.ang);
+    var sin = Math.sin(this.ang);
+    var cos = Math.cos(this.ang);
+    this.x += this.speed*sin + this.rispeed*cos;
+    this.y +=-this.speed*cos + this.rispeed*sin;
   }
   this.crashWith = function(other) {
     this.cubewid = this.wid/1.414214*Math.cos(Math.PI/4-Math.abs(this.ang%(Math.PI/2)));
@@ -507,8 +512,8 @@ function BuCom(x, y, dx, dy, index) {
   this.x = x;
   this.y = y;
   this.index = index;
-  var dxn = 7*dx+(Math.random()*2-1); // 线速度 7px/frame 出射角加入随机涨落
-  var dyn = 7*dy+(Math.random()*2-1);
+  var dxn = 7*dx; // +(Math.random()*2-1); // 线速度 7px/frame
+  var dyn = 7*dy; // +(Math.random()*2-1);
   this.update = function() {
     this.x += dxn;
     this.y += dyn;
@@ -554,7 +559,7 @@ function BuCom(x, y, dx, dy, index) {
 function newbu(x,y,r,dx,dy) {
   var empty = 0;
   while (BuList[empty] != null) {empty++}
-  BuList[empty] = new BuCom(x+r*dx+3,y+r*dy+3,dx,dy,empty); // 防止打死自己 2333
+  BuList[empty] = new BuCom(x+1.1*r*dx,y+1.1*r*dy,dx,dy,empty); // 防止打死自己 2333
   SDshoot.play();
 }
 
@@ -637,35 +642,39 @@ function updateGameArea() {
   Probe1.update();
 
   for (n in BuList) { if (BuList[n] != null) {BuList[n].update()} }
+
 }
 
 
 
 function Control(Prob) {
 
-  Prob.angspeed = 0;
   Prob.speed = 0;
+  Prob.rispeed = 0;
+  Prob.angspeed = 0;
 
-  if (myGameArea.xc && myGameArea.yc) { // myGameArea.touchX && myGameArea.touchY
-    var dx = myGameArea.xc-Prob.x;
-    var dy = Prob.y-myGameArea.yc; // y 轴指向下
-    var rot = Prob.ang;
-    var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
-    var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
+  // if (myGameArea.xc && myGameArea.yc) { // myGameArea.touchX && myGameArea.touchY
+  //   var dx = myGameArea.xc-Prob.x;
+  //   var dy = Prob.y-myGameArea.yc; // y 轴指向下
+  //   var rot = Prob.ang;
+  //   var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
+  //   var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
 
-    if(dxp>4) {Prob.angspeed = 4}
-    else if(dxp<-4) {Prob.angspeed = -4}
-    if(dyp>4) {Prob.speed = 1.5}
-    else if(dyp<-4) {Prob.speed = -1.5}
-  }
+  //   if(dxp>4) {Prob.angspeed = 4}
+  //   else if(dxp<-4) {Prob.angspeed = -4}
+  //   if(dyp>4) {Prob.speed = 1.5}
+  //   else if(dyp<-4) {Prob.speed = -1.5}
+  // }
 
-  if (myGameArea.keys && myGameArea.keys[37]) {Prob.angspeed = -4} // left
-  if (myGameArea.keys && myGameArea.keys[39]) {Prob.angspeed = 4}
-  if (myGameArea.keys && myGameArea.keys[38]) {Prob.speed = 1.5} // up
-  if (myGameArea.keys && myGameArea.keys[40]) {Prob.speed = -1.5}
+  if (myGameArea.keys && (myGameArea.keys[33] || myGameArea.keys[85])) {Prob.angspeed = -4} // 逆转 PgUp 或 U
+  if (myGameArea.keys && (myGameArea.keys[34] || myGameArea.keys[79])) {Prob.angspeed = 4} // 顺转 PgDn 或 O
+  if (myGameArea.keys && (myGameArea.keys[38] || myGameArea.keys[73])) {Prob.speed = 1.5} // 前 ↑ 或 I
+  if (myGameArea.keys && (myGameArea.keys[40] || myGameArea.keys[75])) {Prob.speed = -1.5} // 后 ↓ 或 K
+  if (myGameArea.keys && (myGameArea.keys[37] || myGameArea.keys[74])) {Prob.rispeed = -1.5} // 左滑 ← 或 J
+  if (myGameArea.keys && (myGameArea.keys[39] || myGameArea.keys[76])) {Prob.rispeed = 1.5} // 右滑 → 或 L
   for (n=0;n<5;n++) {
-    if (myGameArea.keys && myGameArea.keys[49+n] || Prob.Info.clicked(n)) {Prob.putdown(n)}
-    if (myGameArea.keys && myGameArea.keys[112+n]) {Prob.fire(n)}
+    if (myGameArea.keys && myGameArea.keys[49+n] || Prob.Info.clicked(n)) {Prob.putdown(n)} // 1~5
+    if (myGameArea.keys && myGameArea.keys[112+n]) {Prob.fire(n)} // F1~F5
   }
 
   if(Prob.speed != 0 || Prob.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
