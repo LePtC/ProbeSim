@@ -75,11 +75,11 @@ var map = new Array(
 var Probe1;
 
 var FoeType = new Array("#fff","#222","red","green"); // 1 Shooter 2 Creeper 3 Hamper
-var FoeSpeed = new Array(0,0.5,1.2,1.3);
+var FoeSpeed = new Array(0,0.7,1.6,1.7);
 var FoeList =  new Array(); // 记录敌人本体
 // var FoeNull;
 var BuList = new Array(); // 记录子弹对象
-var FdropImg = new Array("img/0.png","img/ModBull.png","img/ModTrap.png","img/ModHeal.png"); // 敌人死亡掉落 -1 子弹 -2 陷阱 -3 治疗
+var FdropImg = new Array("img/0.png","img/ModBull4.png","img/ModTrap.png","img/ModHeal.png"); // 敌人死亡掉落 -1 子弹 -2 陷阱 -3 治疗
 
 var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png","img/ModShield.png");
 // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
@@ -335,9 +335,16 @@ function ProbeCom(wid, color, x, y) {
   }
   this.fire = function(i) {
     if (this.mod[i].type == -1) {
-      if (myGameArea.frameNo % 5 == 0) {
+      // if (myGameArea.frameNo % 5 == 0)
         newbu(this.x,this.y,this.cubewid,Math.sin(this.ang),-Math.cos(this.ang));
-      }
+        if (this.mod[i].image.src == "img/ModBull4.png")
+          {this.mod[i].image = new Image(); this.mod[i].image.src = "img/ModBull3.png"}
+        if (this.mod[i].image.src == "img/ModBull3.png")
+          {this.mod[i].image = new Image(); this.mod[i].image.src = "img/ModBull2.png"}
+        if (this.mod[i].image.src == "img/ModBull2.png")
+          {this.mod[i].image = new Image(); this.mod[i].image.src = "img/ModBull.png"}
+        if (this.mod[i].image.src == "img/ModBull.png")
+          {this.mod[i].image = new Image(); this.mod[i].exist = -2;this.mod[i] = ModNull;}
     }
   }
   this.update = function() {
@@ -680,12 +687,12 @@ function Control(Prob) {
   //   else if(dyp<-4) {Prob.speed = -1.5}
   // }
 
-  if (myGameArea.keys && (myGameArea.keys[33] || myGameArea.keys[85])) {Prob.angspeed = -4} // 逆转 PgUp 或 U
-  if (myGameArea.keys && (myGameArea.keys[34] || myGameArea.keys[79])) {Prob.angspeed = 4} // 顺转 PgDn 或 O
-  if (myGameArea.keys && (myGameArea.keys[38] || myGameArea.keys[73])) {Prob.speed = 1.5} // 前 ↑ 或 I
-  if (myGameArea.keys && (myGameArea.keys[40] || myGameArea.keys[75])) {Prob.speed = -1.5} // 后 ↓ 或 K
-  if (myGameArea.keys && (myGameArea.keys[37] || myGameArea.keys[74])) {Prob.rispeed = -1.5} // 左滑 ← 或 J
-  if (myGameArea.keys && (myGameArea.keys[39] || myGameArea.keys[76])) {Prob.rispeed = 1.5} // 右滑 → 或 L
+  if (myGameArea.keys && (myGameArea.keys[33] || myGameArea.keys[85])) {Prob.angspeed = -8} // 逆转 PgUp 或 U
+  if (myGameArea.keys && (myGameArea.keys[34] || myGameArea.keys[79])) {Prob.angspeed = 8} // 顺转 PgDn 或 O
+  if (myGameArea.keys && (myGameArea.keys[38] || myGameArea.keys[73])) {Prob.speed = 2} // 前 ↑ 或 I
+  if (myGameArea.keys && (myGameArea.keys[40] || myGameArea.keys[75])) {Prob.speed = -2} // 后 ↓ 或 K
+  if (myGameArea.keys && (myGameArea.keys[37] || myGameArea.keys[74])) {Prob.rispeed = -2} // 左滑 ← 或 J
+  if (myGameArea.keys && (myGameArea.keys[39] || myGameArea.keys[76])) {Prob.rispeed = 2} // 右滑 → 或 L
   for (n=0;n<5;n++) {
     if (myGameArea.keys && myGameArea.keys[49+n] || Prob.Info.clicked(n)) {Prob.putdown(n)} // 1~5
     if (myGameArea.keys && myGameArea.keys[112+n]) {Prob.fire(n)} // F1~F5
