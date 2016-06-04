@@ -75,7 +75,7 @@ var map = new Array(
 var Probe1;
 
 var FoeType = new Array("#fff","#222","red","green"); // 1 Shooter 2 Creeper 3 Hamper
-var FoeSpeed = new Array(0,0.7,1.6,1.7);
+var FoeSpeed = new Array(0,0.7,1.65,1.85);
 var FoeList =  new Array(); // 记录敌人本体
 // var FoeNull;
 var BuList = new Array(); // 记录子弹对象
@@ -83,6 +83,7 @@ var FdropImg = new Array("img/0.png","img/ModBull4.png","img/ModTrap.png","img/M
 
 var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png","img/ModShield.png");
 // 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
+var BulImg = new Array("img/0.png","img/ModBull.png","img/ModBull2.png","img/ModBull3.png","img/ModBull4.png"); // 子弹数
 var ModNull; // 我需要一个空对象
 var ModCirclit = new Array();
 var ModList = new Array(); // 除 Circlit 以外的 mod 本体
@@ -94,6 +95,7 @@ var hurt = new Array(20,10,6,3,2,1,0); // 护盾减少伤害
 
 var SDprobemove;
 var SDshoot;
+var SDcreeper;
 var SDexplode;
 
 
@@ -147,9 +149,13 @@ function startGame() {
   FoeList[3] = new FoeCom(5, 3, 310, 300, 3); // FoeHampe1
   FoeList[4] = new FoeCom(5, 3, 320, 300, 4); // FoeHampe2
   FoeList[5] = new FoeCom(5, 3, 310, 310, 5); // FoeHampe3
+  FoeList[6] = new FoeCom(6, 1, 500, 500, 6);
+  FoeList[7] = new FoeCom(7, 2, 200, 550, 7);
+  FoeList[8] = new FoeCom(5, 3, 500, 100, 8);
 
   SDprobemove = new Sound("sound/probemove.wav");
   SDshoot = new Sound("sound/shoot.wav");
+  SDcreeper = new Sound("sound/creeper.wav");
   SDexplode = new Sound("sound/explode.wav");
 
   myGameArea.x = 0; // 解决哪儿都没点的 bug
@@ -251,8 +257,7 @@ function ModCom(wid, type, x, y) {
   this.y = y;
   this.ang = "A";
   this.type = type;
-  this.image = new Image();
-  this.image.src = (type>=0)?(ModImg[type]):(FdropImg[-type]);
+  this.bunum = 4; // 子弹数目
   this.modlit = new Array(); // 静态光源只计算一次,存着重复用
   if (this.type == 1) {for (n in map) {this.modlit[n]=0}}
 
@@ -278,7 +283,9 @@ function ModCom(wid, type, x, y) {
   this.updatedraw = function() {
     ctx = myGameArea.context;
     ctx.globalAlpha = cubelit(Wall[nat(this.x,this.y)].alpha);
-    ctx.drawImage(this.image,this.x-wid/2,this.y-wid/2,this.wid,this.wid);
+    var img = new Image();
+    img.src = imgsrc(this);
+    ctx.drawImage(img,this.x-wid/2,this.y-wid/2,this.wid,this.wid);
   }
   this.updatelit = function() {
     // 计算 ModCirclit 方块的光影,max=10
@@ -314,6 +321,7 @@ function ProbeCom(wid, color, x, y) {
   this.health = 99;
   this.Info = null;
   this.mod = new Array(ModNull,ModNull,ModNull,ModNull,ModNull); // 一个 Probe 现最多搭载 5 个插件, 以体积增大为惩罚?
+  this.lastfire = -10; // 开火时间有 CD
   this.modnum = function(id) {
     var sum = 0;
     for (i=0;i<5;i++) {sum+=(this.mod[i].type==id)}
@@ -335,16 +343,17 @@ function ProbeCom(wid, color, x, y) {
   }
   this.fire = function(i) {
     if (this.mod[i].type == -1) {
-      // if (myGameArea.frameNo % 5 == 0)
-        newbu(this.x,this.y,this.cubewid,Math.sin(this.ang),-Math.cos(this.ang));
-        if (this.mod[i].image.src == "img/ModBull4.png")
-          {this.mod[i].image = new Image(); this.mod[i].image.src = "img/ModBull3.png"}
-        if (this.mod[i].image.src == "img/ModBull3.png")
-          {this.mod[i].image = new Image(); this.mod[i].image.src = "img/ModBull2.png"}
-        if (this.mod[i].image.src == "img/ModBull2.png")
-          {this.mod[i].image = new Image(); this.mod[i].image.src = "img/ModBull.png"}
-        if (this.mod[i].image.src == "img/ModBull.png")
-          {this.mod[i].image = new Image(); this.mod[i].exist = -2;this.mod[i] = ModNull;}
+      if (myGameArea.frameNo - this.lastfire > 10) {
+        if (this.mod[i].bunum > 0) {
+          newbu(this.x,this.y,this.cubewid,Math.sin(this.ang),-Math.cos(this.ang));
+          this.mod[i].bunum --;
+          if (this.mod[i].bunum <= 0) {
+            this.mod[i].exist = -2;
+            this.mod[i] = ModNull;
+          }
+        }
+        this.lastfire = myGameArea.frameNo;
+      }
     }
   }
   this.update = function() {
@@ -440,6 +449,7 @@ function FoeCom(radius, type, x, y, exist) {
   this.randomang = Math.random()*2*Math.PI;
   this.pursuerandx = 0;
   this.pursuerandy = 0;
+  this.bombframe = -1; // Creeper 引爆
   this.update = function() {
     if (this.type != 0) {
       this.newPos();
@@ -460,6 +470,21 @@ function FoeCom(radius, type, x, y, exist) {
     }
   }
   this.newPos = function() { // 追击速度
+    // 即将爆炸的 Creeper 是不动的
+    if (this.bombframe > 0) {
+      if (myGameArea.frameNo == this.bombframe) {
+        SDexplode.play();
+        this.dead();
+        var r2 = getr2(this.x-Probe1.x,this.y-Probe1.y);
+        var h = hurt[Probe1.modnum(4)];
+        if (r2 < 100*wd*wd) {Probe1.health -= h}
+        if (r2 < 64*wd*wd) {Probe1.health -= h}
+        if (r2 < 36*wd*wd) {Probe1.health -= h}
+        if (r2 < 16*wd*wd) {Probe1.health -= h}
+        if (r2 < 4*wd*wd) {Probe1.health -= h}
+      }
+      return(0);
+    }
     var speed = FoeSpeed[this.type];
     if (!iswallinline(Probe1.x,Probe1.y,this.x,this.y)) {
       var angdx = Probe1.x-this.x;
@@ -476,10 +501,9 @@ function FoeCom(radius, type, x, y, exist) {
           newbu(this.x,this.y,this.r,angdx,angdy);
         }
         if (this.type == 2) {
-          if (getr2(this.x-Probe1.x,this.y-Probe1.y) < 9*wd*wd) {
-            Probe1.health -= 5*hurt[Probe1.modnum(4)];
-            SDexplode.play();
-            this.dead();
+          if (getr2(this.x-Probe1.x,this.y-Probe1.y) < 25*wd*wd) {
+            this.bombframe = myGameArea.frameNo + 15;
+            SDcreeper.play();
           }
         }
       }
@@ -604,8 +628,7 @@ function InfoCom(host, x, y) {
 
     for (i in host.mod) {
       var img = new Image();
-      var type = host.mod[i].type;
-      img.src = (type>=0)?(ModImg[type]):(FdropImg[-type]);;
+      img.src = imgsrc(host.mod[i]);
       ctx.drawImage(img,x-8+16*i,y+15,wd+2,wd+2);
     }
   }
@@ -820,4 +843,10 @@ function modlitsum(n) {
   var sum = 0;
   for (x in ModCirclit) {sum += ModCirclit[x].modlit[n]}
   return(sum)
+}
+
+function imgsrc(mod) {
+  if (mod.type>=0) {return ModImg[mod.type]}
+  if (mod.type==-1) {return BulImg[mod.bunum]}
+  if (mod.type<-1) {return FdropImg[-mod.type]}
 }
