@@ -244,7 +244,7 @@ function WallCom(wid, color, x, y) {
 
 function ModCom(wid, type, x, y) {
 
-  this.exist = -1; // -1 表示在地上, 012 表示在插槽
+  this.exist = -1; // -1 表示在地上, 012 表示在插槽, -2 表示消耗掉
   this.wait = false; // 等待复活
   this.wid = wid;
   this.x = x;
@@ -341,6 +341,19 @@ function ProbeCom(wid, color, x, y) {
     }
   }
   this.update = function() {
+    if (this.modnum(-3)>0) { // 持有治疗插件则回血
+      for (f=0;f<this.modnum(-3);f++) { // 加血时刻均匀化
+        if (myGameArea.frameNo % 20 == f*4) {this.health++}
+      }
+      if (this.health>99) {this.health=99}
+      if (this.health<0) { // Probe 死亡则自动消耗掉回血插件
+        this.health = 99;
+        var i = 0;
+        while (this.mod[i].type!=-3) {i++}
+        this.mod[i].exist = -2;
+        this.mod[i] = ModNull;
+      }
+    }
     if (this.health<0) {this.reBirth()}
     this.newPos();
     // this.wid = wid+2*((this.mod[0]!=0)+(this.mod[1]!=0)+(this.mod[2]!=0));
