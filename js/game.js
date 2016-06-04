@@ -346,13 +346,14 @@ function ProbeCom(wid, color, x, y) {
         if (myGameArea.frameNo % 20 == f*4) {this.health++}
       }
       if (this.health>99) {this.health=99}
-      if (this.health<0) { // Probe 死亡则自动消耗掉回血插件
-        this.health = 99;
-        var i = 0;
-        while (this.mod[i].type!=-3) {i++}
-        this.mod[i].exist = -2;
-        this.mod[i] = ModNull;
-      }
+    }
+    while (this.modnum(-3)>0 && this.health<0) {
+      // Probe 死亡则自动消耗掉回血插件
+      this.health += 99;
+      var i = 0;
+      while (this.mod[i].type!=-3) {i++}
+      this.mod[i].exist = -2;
+      this.mod[i] = ModNull;
     }
     if (this.health<0) {this.reBirth()}
     this.newPos();
