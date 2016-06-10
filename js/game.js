@@ -95,8 +95,8 @@ var ModCirclit = new Array();
 var ModList = new Array(); // 除 Circlit 以外的 mod 本体
 
 
-var litmax = new Array(250,250,400,500,600,700); // 最远光照半径
-var lifmax =  new Array(0,200,350,450,550,650); // 生命探测半宽
+var litmax = new Array(200,200,300,350,400,450); // 最远光照半径
+var lifmax =  new Array(0,150,250,300,350,400); // 生命探测半宽
 var hurt = new Array(20,10,6,3,2,1,0); // 护盾减少伤害
 
 var SDprobemove;
@@ -680,7 +680,10 @@ function updateGameArea() {
 
   Control(Probe1);
 
-  for (n in map) {Wall[n].update(n)}
+  for (n in map) {
+    if (Wall[n].x+vx>-wd && Wall[n].x+vx<stagew+wd
+      && Wall[n].y+vy>-wd && Wall[n].y+vy<stageh+wd) {Wall[n].update(n)}
+  }
 
   for (n in ModCirclit) {ModCirclit[n].update()}
   for (n in ModList) {ModList[n].update()}
