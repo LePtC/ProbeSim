@@ -719,20 +719,20 @@ function Control(Prob) {
 
   if (myGameArea.keys) {
     if (myGameArea.keys[38]) { // 前 ↑
-      if (myGameArea.keys[17]) {vy-=20} // ctrl 调视角
+      if (myGameArea.keys[17]) {vy+=20} // ctrl 调视角
       else {Prob.touch = false; Prob.speed = 1.8;}
     }
     if (myGameArea.keys[40]) { // 后 ↓
-      if (myGameArea.keys[17]) {vy+=20}
+      if (myGameArea.keys[17]) {vy-=20}
       else {Prob.touch = false; Prob.speed = -1.8;}
     }
 
     if (myGameArea.keys[37]) { // 逆转 ←
-      if (myGameArea.keys[17]) {vx-=20}
+      if (myGameArea.keys[17]) {vx+=20}
       else {Prob.touch = false; Prob.angspeed -= 1.5;
       if (Prob.angspeed<-50) {Prob.angspeed=-50}}
     } else if (myGameArea.keys[39]) { // 顺转 →
-      if (myGameArea.keys[17]) {vx+=20}
+      if (myGameArea.keys[17]) {vx-=20}
       else {Prob.touch = false; Prob.angspeed += 1.5;
       if (Prob.angspeed>50) {Prob.angspeed=50}}
     } else if (!Prob.touch) {
