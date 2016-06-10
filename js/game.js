@@ -102,7 +102,7 @@ var WallType = new Array("white","green","#0094FF"); // 0 地板 1 墙 2 母舰�
 var Probe1;
 
 var FoeType = new Array("#fff","#222","red","green"); // 1 Shooter 2 Creeper 3 Hamper
-var FoeSpeed = new Array(0,0.6,1.55,1.65);
+var FoeSpeed = new Array(0,0.6,1.5,1.6);
 var FoeList =  new Array(); // 记录敌人本体
 // var FoeNull;
 var BuList = new Array(); // 记录子弹对象
@@ -118,7 +118,7 @@ var ModList = new Array(); // 除 Circlit 以外的 mod 本体
 
 var litmax = new Array(200,200,300,350,400,450); // 最远光照半径
 var lifmax =  new Array(0,150,200,250,300,350); // 生命探测半宽
-var hurt = new Array(20,10,6,3,2,1,0); // 护盾减少伤害
+var hurt = new Array(20,10,6,3,2,1,0,0); // 护盾减少伤害
 
 var SDprobemove;
 var SDshoot;
@@ -598,6 +598,7 @@ function FoeCom(radius, type, x, y, exist) {
     }
     // Probe 和敌人互怼检测
     if (touch(Probe1,this)) {
+      if (this.type == 3 && myGameArea.frameNo % 25 == 0) {Probe1.health -= hurt[Probe1.modnum(4)+2]}
       Probe1.crashWith(this);
       this.crashWith(Probe1);
     }
