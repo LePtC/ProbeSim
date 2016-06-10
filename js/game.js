@@ -9,9 +9,9 @@ var wd = 10; // 墙宽
 var iwd = 80; // 每行网格数
 
 // 将字母翻译为键码
-var A=65,B=66,C=67,D=68,E=69,F=70,G=71,H=72,I=73,J=74,K=75,L=76,M=77,N=78,O=79,P=80,Q=81,R=82,S=83,T=84,U=85,V=86,W=87,X=88,Y=89,Z=90;
-var n = new Array(48,49,50,51,52,53,54,55,56,57); // 0~9
-var f = new Array(112,113,114,115,116,117,118,119,120,121,122,123); // f1~f12
+// var A=65,B=66,C=67,D=68,E=69,F=70,G=71,H=72,I=73,J=74,K=75,L=76,M=77,N=78,O=79,P=80,Q=81,R=82,S=83,T=84,U=85,V=86,W=87,X=88,Y=89,Z=90;
+// var n = new Array(48,49,50,51,52,53,54,55,56,57); // 0~9
+// var f = new Array(112,113,114,115,116,117,118,119,120,121,122,123); // f1~f12
 
 var Wall = new Array(); // 墙像素 10^2, 网格 80*80, 总像素 800*800
 var map = new Array(
@@ -97,6 +97,7 @@ var map = new Array(
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 );
 
+var WallType = new Array("white","green","#0094FF"); // 0 地板 1 墙 2 母舰墙
 
 var Probe1;
 
@@ -128,23 +129,7 @@ var SDexplode;
 
 function startGame() {
 
-  for (n in map) {
-    var j = n%iwd; // i,j start from 0
-    var i = (n-j)/iwd;
-    switch(map[n]) {
-    case 0:
-        Wall[n] = new WallCom(wd, "white", wd*(j+0.5), wd*(i+0.5));
-        break;
-    case 1:
-        Wall[n] = new WallCom(wd, "green", wd*(j+0.5), wd*(i+0.5));
-        break;
-    case 2:
-        Wall[n] = new WallCom(wd, "#0094FF", wd*(j+0.5), wd*(i+0.5));
-        break;
-    default:
-
-    }
-  }
+  for (n in map) { Wall[n] = new WallCom(wd,n) }
 
   ModNull = new ModCom(wd+2, 0, -20, -20);
   // 母舰光,干脆用吃不到的 LitMod 代替吧
@@ -242,25 +227,44 @@ var myGameArea = {
 
 
 
-function WallCom(wid, color, x, y) {
+function WallCom(wid, n) {
 
   this.wid = wid;
-  this.x = x;
-  this.y = y;
+  this.n = n;
+  this.j = n%iwd; // i,j start from 0
+  this.i = (n-this.j)/iwd;
+  this.x = wd*(this.j+0.5);
+  this.y = wd*(this.i+0.5);
+  this.type = map[n];
   this.alpha = 0;
-  this.update = function(n) {
-    if (iswall(map[n])) {
+  this.conv = 0;
+  this.preupdate = function() { // 先算一轮卷积前的
+    this.alpha = lightlevel(Probe1,this,litmax[Probe1.modnum(1)]);
+    if (this.alpha>0.001) {this.conv = iswallinline(Probe1.x,Probe1.y,this.x,this.y)}
+  }
+  this.update = function() {
+    ctx = myGameArea.context;
+    ctx.fillStyle = WallType[this.type];
+
+    if (iswall(this.type)) {
       if (Probe1.modnum(3)>0) {this.alpha = 0.8}
       else {
-        this.alpha = cutone(lightlevel(Probe1,this,litmax[Probe1.modnum(1)],1)+modlitsum(n));
+        var temp = this.conv*2;
+        if (i>0) {temp+=Wall[(i-1)*iwd+j].conv}
+        if (i<fullw/wd-1) {temp+=Wall[(i+1)*iwd+j].conv}
+        if (j>0) {temp+=Wall[i*iwd+j-1].conv}
+        if (j<fullh/wd-1) {temp+=Wall[i*iwd+j+1].conv}
+        if (temp<4) {this.conv = 1} // 给墙补光
+        else {this.conv = 1-temp/6}
+      this.alpha = cutone(this.alpha*this.conv+modlitsum(n))
+      ctx.globalAlpha = this.alpha;
+      ctx.fillRect(vx+this.x-this.wid/2, vy+this.y-this.wid/2, this.wid, this.wid);
       }
-    } else { // if (map[n]==0)
-      this.alpha = cutone(lightlevel(Probe1,this,litmax[Probe1.modnum(1)],0)+modlitsum(n));
+    } else { // if (this.type==0)
+      this.alpha = cutone(this.alpha*(1-this.conv)+modlitsum(n))
+      ctx.globalAlpha = this.alpha;
+      ctx.fillRect(vx+this.x-this.wid/2+3, vy+this.y-this.wid/2+3, 4, 4);
     }
-    ctx = myGameArea.context;
-    ctx.fillStyle = color;
-    ctx.globalAlpha = this.alpha;
-    ctx.fillRect(vx+this.x-this.wid/2, vy+this.y-this.wid/2, this.wid, this.wid);
   }
 }
 
@@ -311,10 +315,10 @@ function ModCom(wid, type, x, y) {
     for (j=0;j<20;j++) {
       n = nat(this.x-(i-10)*wd,this.y-(j-10)*wd);
       if (iswall(map[n])) {
-        this.modlit[n] = lightlevel(this,Wall[n],100,1);
+        this.modlit[n] = lightlevel(this,Wall[n],70);
       }
       if (map[n]==0) {
-        this.modlit[n] = lightlevel(this,Wall[n],100,0);
+        this.modlit[n] = lightlevel(this,Wall[n],70);
       }
     }}
   }
@@ -704,7 +708,7 @@ function updateGameArea() {
 
   for (n in map) {
     if (Wall[n].x+vx>-wd && Wall[n].x+vx<stagew+wd
-      && Wall[n].y+vy>-wd && Wall[n].y+vy<stageh+wd) {Wall[n].update(n)}
+      && Wall[n].y+vy>-wd && Wall[n].y+vy<stageh+wd) {Wall[n].preupdate();Wall[n].update()}
   }
 
   for (n in ModCirclit) {ModCirclit[n].update()}
@@ -757,11 +761,11 @@ function Control(Prob) {
     if (myGameArea.keys[37]) { // 逆转 ←
       if (myGameArea.keys[17]) {vx+=20}
       else {Prob.touch = false; Prob.angspeed -= 1.5;
-      if (Prob.angspeed<-50) {Prob.angspeed=-50}}
+      if (Prob.angspeed<-35) {Prob.angspeed=-35}}
     } else if (myGameArea.keys[39]) { // 顺转 →
       if (myGameArea.keys[17]) {vx-=20}
       else {Prob.touch = false; Prob.angspeed += 1.5;
-      if (Prob.angspeed>50) {Prob.angspeed=50}}
+      if (Prob.angspeed>35) {Prob.angspeed=35}}
     } else if (!Prob.touch) {
       Prob.angspeed = 0;
     }
@@ -792,27 +796,20 @@ function Control(Prob) {
 
 
 
-function lightlevel(source,target,max,highlight) {
+function lightlevel(source,target,max) {
 // return 1 // debug 用
-  var ax = source.x;
-  var ay = source.y;
   var ang = source.ang; // source 必须是 Probe (或 ModCirclit)
-  var bx = target.x;
-  var by = target.y;
-  var r = getr(bx-ax,by-ay);
+  var dx = target.x-source.x;
+  var dy = target.y-source.y;
+  var r = getr(dx,dy);
   if (r>=max) {return 0} // 提前 return 以节约计算量
   var slant = 1;
   if (ang != "A") { if (source.modnum(1)==0) {
-    slant = dot(-Math.sin(ang),Math.cos(ang),bx-ax,by-ay,r);
+    slant = dot(-Math.sin(ang),Math.cos(ang),dx,dy,r);
     slant = Math.pow(0.5*(1-slant),3);
     if (slant<0.005) {return 0}
   }}
-  var convolve = (2*iswallinline(ax,ay,bx,by)+
-    iswallinline(ax,ay,bx+wd/2,by)+iswallinline(ax,ay,bx-wd/2,by)+
-    iswallinline(ax,ay,bx,by+wd/2)+iswallinline(ax,ay,bx,by-wd/2))/6;
-  if (highlight>0 && convolve<0.95) {convolve = 0} // 给墙补光
-  // if (highlight<2) {slant = Math.pow(slant,2)} else {r /= 1.5} // 给实体补光
-  return((1-r/max)*slant*slant*(1-convolve))
+  return((1-r/max)*slant*slant)
 }
 
 
