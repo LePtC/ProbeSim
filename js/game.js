@@ -1,7 +1,10 @@
 
-var vx = 200; // 视野原点, 左右留作显示信息
+var vx = 0; // 视野原点, 左右留作显示信息
 var vy = 0;
-
+var stagew = 600; // 舞台宽度
+var stageh = 420;
+var fullw = 800; // 地图总宽度
+var fullh = 600;
 var wd = 10; // 墙宽
 var iwd = 80; // 每行网格数
 
@@ -141,9 +144,9 @@ function startGame() {
 
   for (n in ModCirclit) {ModCirclit[n].updatelit()}
 
-  Probe1 = new ProbeCom(15, "#C59D0D", 300, 30);
+  Probe1 = new ProbeCom(15, "#C59D0D", 30, 30);
   Probe1.ang = Math.PI / 2;
-  Probe1.Info = new InfoCom(Probe1, 16, 250);
+  Probe1.Info = new InfoCom(Probe1, 16, 200);
 
   // FoeNull = new ModCom(1, 0, -20, -20);
   FoeList[0] = new FoeCom(6, 1, 500,  30, 0); // FoeShoot1
@@ -171,8 +174,8 @@ function startGame() {
 var myGameArea = {
   canvas : document.createElement("canvas"),
   start : function() {
-    this.canvas.width = 600; // document.body.clientWidth
-    this.canvas.height = 400;
+    this.canvas.width = stagew; // document.body.clientWidth
+    this.canvas.height = stageh;
     this.context = this.canvas.getContext("2d");
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
@@ -614,6 +617,9 @@ function InfoCom(host, x, y) {
   this.update = function() {
     ctx = myGameArea.context;
     ctx.globalAlpha = 1;
+    ctx.fillStyle = "#222";
+    ctx.fillRect(x-15, y-3*wd, wd*9, wd*8);
+
     ctx.fillStyle = host.color;
     ctx.fillRect(x+host.wid / -2, y+host.wid / -2, host.wid, host.wid);
     ctx.fillStyle = "#0568B7";
@@ -672,6 +678,8 @@ function updateGameArea() {
   myGameArea.frameNo++;
   myGameArea.clear();
 
+  Control(Probe1);
+
   for (n in map) {Wall[n].update(n)}
 
   for (n in ModCirclit) {ModCirclit[n].update()}
@@ -679,16 +687,10 @@ function updateGameArea() {
 
   for (n in FoeList) {FoeList[n].update()}
 
-  Control(Probe1);
   Probe1.update();
 
   for (n in BuList) { if (BuList[n] != null) {BuList[n].update()} }
 
-  // 画分割线
-  // var ctx = myGameArea.context;
-  // ctx.globalAlpha = 1;
-  // ctx.fillStyle = "#AAA";
-  // ctx.fillRect(199, 0, 1, 400);
 }
 
 
@@ -739,6 +741,11 @@ function Control(Prob) {
       Prob.angspeed = 0;
     }
   }
+
+  // 暂时设为自动将 Probe 置于视野中心, ctrl 暂时不用了吧
+  if (Prob.x>stagew/2 && Prob.x<fullw-stagew/2) {vx=stagew/2-Math.floor(Prob.x)}
+  if (Prob.y>stageh/2 && Prob.y<fullh-stageh/2) {vy=stageh/2-Math.floor(Prob.y)}
+
   for (n=0;n<5;n++) {
     if (myGameArea.keys && myGameArea.keys[49+n] || Prob.Info.clicked(n)) {Prob.putdown(n)} // 1~5
     if (myGameArea.keys && myGameArea.keys[112+n]) {Prob.fire(n)} // F1~F5
