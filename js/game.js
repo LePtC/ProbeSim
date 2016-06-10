@@ -250,20 +250,64 @@ function WallCom(wid, n) {
       if (Probe1.modnum(3)>0) {this.alpha = 0.8}
       else {
         var temp = this.conv*2;
-        if (i>0) {temp+=Wall[(i-1)*iwd+j].conv}
-        if (i<fullw/wd-1) {temp+=Wall[(i+1)*iwd+j].conv}
-        if (j>0) {temp+=Wall[i*iwd+j-1].conv}
-        if (j<fullh/wd-1) {temp+=Wall[i*iwd+j+1].conv}
-        if (temp<4) {this.conv = 1} // 给墙补光
-        else {this.conv = 1-temp/6}
-      this.alpha = cutone(this.alpha*this.conv+modlitsum(n))
+        if (this.i>0) {temp+=Wall[(this.i-1)*iwd+this.j].conv}
+        if (this.i<fullw/wd-1) {temp+=Wall[(this.i+1)*iwd+this.j].conv}
+        if (this.j>0) {temp+=Wall[this.i*iwd+this.j-1].conv}
+        if (this.j<fullh/wd-1) {temp+=Wall[this.i*iwd+this.j+1].conv}
+        if (temp<5) {this.conv = 0} // 给墙补光
+        else {this.conv = temp/6}
+      this.alpha = cutone(this.alpha*(1-this.conv)+modlitsum(n))
+      }
       ctx.globalAlpha = this.alpha;
       ctx.fillRect(vx+this.x-this.wid/2, vy+this.y-this.wid/2, this.wid, this.wid);
-      }
     } else { // if (this.type==0)
       this.alpha = cutone(this.alpha*(1-this.conv)+modlitsum(n))
-      ctx.globalAlpha = this.alpha;
+    }
+  }
+  this.pstupdate = function() {
+    if (!iswall(this.type)) {
+      ctx.fillStyle = WallType[this.type];
+      var la = this.alpha;
+      var ra = this.alpha;
+      var ua = this.alpha;
+      var da = this.alpha;
+      if (this.j>0) {
+        tn = this.i*iwd+this.j-1;
+        if (!iswall(Wall[tn].type)) { la = Wall[tn].alpha }
+      }
+      if (this.j<fullh/wd-1) {
+        tn = this.i*iwd+this.j+1;
+        if (!iswall(Wall[tn].type)) { ra = Wall[tn].alpha }
+      }
+      if (this.i>0) {
+        tn = (this.i-1)*iwd+this.j;
+        if (!iswall(Wall[tn].type)) { ua = Wall[tn].alpha }
+      }
+      if (this.i<fullw/wd-1) {
+        tn = (this.i+1)*iwd+this.j;
+        if (!iswall(Wall[tn].type)) { da = Wall[tn].alpha }
+      }
+
+      ctx.globalAlpha = cutone((this.alpha*2+la+ra+ua+da)/6);
       ctx.fillRect(vx+this.x-this.wid/2+3, vy+this.y-this.wid/2+3, 4, 4);
+
+      ctx.globalAlpha = cutone((this.alpha+la)/2); // 四条边
+      ctx.fillRect(vx+this.x-this.wid/2, vy+this.y-this.wid/2+3, 3, 4);
+      ctx.globalAlpha = cutone((this.alpha+ra)/2);
+      ctx.fillRect(vx+this.x-this.wid/2+7, vy+this.y-this.wid/2+3, 3, 4);
+      ctx.globalAlpha = cutone((this.alpha+ua)/2);
+      ctx.fillRect(vx+this.x-this.wid/2+3, vy+this.y-this.wid/2, 4, 3);
+      ctx.globalAlpha = cutone((this.alpha+da)/2);
+      ctx.fillRect(vx+this.x-this.wid/2+3, vy+this.y-this.wid/2+7, 4, 3);
+
+      ctx.globalAlpha = cutone((this.alpha+la+ua)/3); // 四个角
+      ctx.fillRect(vx+this.x-this.wid/2, vy+this.y-this.wid/2, 3, 3);
+      ctx.globalAlpha = cutone((this.alpha+ra+ua)/3);
+      ctx.fillRect(vx+this.x-this.wid/2+7, vy+this.y-this.wid/2, 3, 3);
+      ctx.globalAlpha = cutone((this.alpha+la+da)/3);
+      ctx.fillRect(vx+this.x-this.wid/2, vy+this.y-this.wid/2+7, 3, 3);
+      ctx.globalAlpha = cutone((this.alpha+ra+da)/3);
+      ctx.fillRect(vx+this.x-this.wid/2+7, vy+this.y-this.wid/2+7, 3, 3);
     }
   }
 }
@@ -315,10 +359,10 @@ function ModCom(wid, type, x, y) {
     for (j=0;j<20;j++) {
       n = nat(this.x-(i-10)*wd,this.y-(j-10)*wd);
       if (iswall(map[n])) {
-        this.modlit[n] = lightlevel(this,Wall[n],70);
+        this.modlit[n] = lightlevel(this,Wall[n],70)*(1-iswallinline(this.x,this.y,Wall[n].x,Wall[n].y));
       }
       if (map[n]==0) {
-        this.modlit[n] = lightlevel(this,Wall[n],70);
+        this.modlit[n] = lightlevel(this,Wall[n],70)*(1-iswallinline(this.x,this.y,Wall[n].x,Wall[n].y));
       }
     }}
   }
@@ -706,10 +750,13 @@ function updateGameArea() {
 
   Control(Probe1);
 
-  for (n in map) {
-    if (Wall[n].x+vx>-wd && Wall[n].x+vx<stagew+wd
-      && Wall[n].y+vy>-wd && Wall[n].y+vy<stageh+wd) {Wall[n].preupdate();Wall[n].update()}
+  var flag = Array();
+  for (n in map) { flag[n] = (Wall[n].x+vx>-wd && Wall[n].x+vx<stagew+wd
+      && Wall[n].y+vy>-wd && Wall[n].y+vy<stageh+wd)
   }
+  for (n in map){ if (flag[n]) {Wall[n].preupdate()} }
+  for (n in map){ if (flag[n]) {Wall[n].update()} }
+  for (n in map){ if (flag[n]) {Wall[n].pstupdate()} }
 
   for (n in ModCirclit) {ModCirclit[n].update()}
   for (n in ModList) {ModList[n].update()}
