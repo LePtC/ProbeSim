@@ -1,4 +1,7 @@
 
+var vx = 200; // 视野原点, 左右留作显示信息
+var vy = 0;
+
 var wd = 10; // 墙宽
 var iwd = 80; // 每行网格数
 
@@ -75,7 +78,7 @@ var map = new Array(
 var Probe1;
 
 var FoeType = new Array("#fff","#222","red","green"); // 1 Shooter 2 Creeper 3 Hamper
-var FoeSpeed = new Array(0,0.7,1.65,1.85);
+var FoeSpeed = new Array(0,0.6,1.55,1.65);
 var FoeList =  new Array(); // 记录敌人本体
 // var FoeNull;
 var BuList = new Array(); // 记录子弹对象
@@ -158,7 +161,7 @@ function startGame() {
   SDcreeper = new Sound("sound/creeper.wav");
   SDexplode = new Sound("sound/explode.wav");
 
-  myGameArea.x = 0; // 解决哪儿都没点的 bug
+  myGameArea.x = 0; // 解决鼠标开始哪儿都没点的 bug
   myGameArea.y = 0;
   myGameArea.start();
 }
@@ -168,8 +171,8 @@ function startGame() {
 var myGameArea = {
   canvas : document.createElement("canvas"),
   start : function() {
-    this.canvas.width = 800; // document.body.clientWidth
-    this.canvas.height = 600;
+    this.canvas.width = 600; // document.body.clientWidth
+    this.canvas.height = 400;
     this.context = this.canvas.getContext("2d");
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
@@ -180,10 +183,6 @@ var myGameArea = {
     window.addEventListener('mousedown', function (e) { // mousemove
       myGameArea.x = e.pageX; // 点按钮用
       myGameArea.y = e.pageY;
-      if (!crash(myGameArea,2,Probe1.Info,wd*5)) {
-        myGameArea.xc = e.pageX; // cache, 导向用
-        myGameArea.yc = e.pageY;
-      }
     })
     window.addEventListener('mouseup', function (e) {
       myGameArea.x = false;
@@ -196,10 +195,6 @@ var myGameArea = {
     window.addEventListener('touchstart', function (e) {
       myGameArea.x = e.pageX;
       myGameArea.y = e.pageY;
-      if (!crash(myGameArea,2,Probe1.Info,wd*5)) {
-        myGameArea.xc = e.pageX;
-        myGameArea.yc = e.pageY;
-      }
     })
     window.addEventListener('touchend', function (e) {
       myGameArea.x = false;
@@ -242,7 +237,7 @@ function WallCom(wid, color, x, y) {
     ctx = myGameArea.context;
     ctx.fillStyle = color;
     ctx.globalAlpha = this.alpha;
-    ctx.fillRect(this.x-this.wid/2, this.y-this.wid/2, this.wid, this.wid);
+    ctx.fillRect(vx+this.x-this.wid/2, vy+this.y-this.wid/2, this.wid, this.wid);
   }
 }
 
@@ -285,7 +280,7 @@ function ModCom(wid, type, x, y) {
     ctx.globalAlpha = cubelit(Wall[nat(this.x,this.y)].alpha);
     var img = new Image();
     img.src = imgsrc(this);
-    ctx.drawImage(img,this.x-wid/2,this.y-wid/2,this.wid,this.wid);
+    ctx.drawImage(img,vx+this.x-wid/2,vy+this.y-wid/2,this.wid,this.wid);
   }
   this.updatelit = function() {
     // 计算 ModCirclit 方块的光影,max=10
@@ -312,11 +307,13 @@ function ProbeCom(wid, color, x, y) {
   this.wid = wid;
   this.cubewid = wid;
   this.speed = 0; // 前进速度
-  this.rispeed = 0; // 右滑速度
   this.ang = 0;
   this.angspeed = 0;
   this.x = x;
   this.y = y;
+  this.headx = x; // 每个 probe 有不同的目的地
+  this.heady = y;
+  this.touch = false; // 触控还是键盘
   this.color = color;
   this.health = 99;
   this.Info = null;
@@ -376,7 +373,7 @@ function ProbeCom(wid, color, x, y) {
     // this.wid = wid+2*((this.mod[0]!=0)+(this.mod[1]!=0)+(this.mod[2]!=0));
     ctx = myGameArea.context;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(vx+this.x, vy+this.y);
     ctx.rotate(this.ang);
     ctx.fillStyle = color;
     ctx.globalAlpha = 1;
@@ -388,10 +385,10 @@ function ProbeCom(wid, color, x, y) {
       ctx.fillStyle = "#28FF28";
       ctx.globalAlpha = 0.3;
       var w = lifmax[this.modnum(2)];
-      ctx.fillRect(this.x-w, this.y-w , 2*w, 1); // 上
-      ctx.fillRect(this.x-w, this.y+w , 2*w, 1); // 下
-      ctx.fillRect(this.x-w, this.y-w, 1 , 2*w); // 左
-      ctx.fillRect(this.x+w, this.y-w, 1 , 2*w); // 右
+      ctx.fillRect(vx+this.x-w, vy+this.y-w , 2*w, 1); // 上
+      ctx.fillRect(vx+this.x-w, vy+this.y+w , 2*w, 1); // 下
+      ctx.fillRect(vx+this.x-w, vy+this.y-w, 1 , 2*w); // 左
+      ctx.fillRect(vx+this.x+w, vy+this.y-w, 1 , 2*w); // 右
     }
     this.Info.update();
   }
@@ -399,8 +396,8 @@ function ProbeCom(wid, color, x, y) {
     this.ang += this.angspeed * Math.PI / 180;
     var sin = Math.sin(this.ang);
     var cos = Math.cos(this.ang);
-    this.x += this.speed*sin + this.rispeed*cos;
-    this.y +=-this.speed*cos + this.rispeed*sin;
+    this.x += this.speed*sin; // + this.rispeed*cos;
+    this.y +=-this.speed*cos; // + this.rispeed*sin;
   }
   this.crashWith = function(other) {
     this.cubewid = this.wid/1.414214*Math.cos(Math.PI/4-Math.abs(this.ang%(Math.PI/2)));
@@ -457,10 +454,10 @@ function FoeCom(radius, type, x, y, exist) {
       if (Probe1.modnum(2)>0 && Math.abs(Probe1.x-this.x)<=lifmax[Probe1.modnum(2)] && Math.abs(Probe1.y-this.y)<=lifmax[Probe1.modnum(2)]) {
         ctx.fillStyle = "#28FF28";
         ctx.globalAlpha = 1;
-        ctx.fillRect(this.x-2, this.y-2, 4, 4);
+        ctx.fillRect(vx+this.x-2, vy+this.y-2, 4, 4);
       }
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.r, 0, 2*Math.PI, false);
+      ctx.arc(vx+this.x, vy+this.y, this.r, 0, 2*Math.PI, false);
       ctx.fillStyle = FoeType[this.type];
       ctx.globalAlpha = cubelit(Wall[nat(this.x,this.y)].alpha);
       ctx.fill();
@@ -565,7 +562,7 @@ function BuCom(x, y, dx, dy, index) {
 
     ctx = myGameArea.context;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 2, 0, 2*Math.PI, false);
+    ctx.arc(vx+this.x, vy+this.y, 2, 0, 2*Math.PI, false);
     ctx.fillStyle = "red";
     ctx.globalAlpha = 0.8;
     ctx.fill();
@@ -687,6 +684,11 @@ function updateGameArea() {
 
   for (n in BuList) { if (BuList[n] != null) {BuList[n].update()} }
 
+  // 画分割线
+  // var ctx = myGameArea.context;
+  // ctx.globalAlpha = 1;
+  // ctx.fillStyle = "#AAA";
+  // ctx.fillRect(199, 0, 1, 400);
 }
 
 
@@ -694,28 +696,49 @@ function updateGameArea() {
 function Control(Prob) {
 
   Prob.speed = 0;
-  Prob.rispeed = 0;
-  Prob.angspeed = 0;
 
-  // if (myGameArea.xc && myGameArea.yc) { // myGameArea.touchX && myGameArea.touchY
-  //   var dx = myGameArea.xc-Prob.x;
-  //   var dy = Prob.y-myGameArea.yc; // y 轴指向下
-  //   var rot = Prob.ang;
-  //   var dxp = Math.cos(rot)*dx-Math.sin(rot)*dy; // 转动变换
-  //   var dyp = Math.sin(rot)*dx+Math.cos(rot)*dy;
+  // myGameArea.touchX && myGameArea.touchY
+  if (myGameArea.x && myGameArea.y && (!crash(myGameArea,2,Prob.Info,wd*5))) {
+    Prob.headx = myGameArea.x-vx;
+    Prob.heady = myGameArea.y-vy;
+    Prob.touch = true;
+  }
+  if (Prob.touch) {
+    var dx = Prob.headx-Prob.x;
+    var dy = Prob.y-Prob.heady; // y 轴指向下
+    var dxp = Math.cos(Prob.ang)*dx-Math.sin(Prob.ang)*dy; // 转动变换
+    var dyp = Math.sin(Prob.ang)*dx+Math.cos(Prob.ang)*dy;
+    var flag = false; // 由于键盘引入了角加速度,触控需手动清理残余角动量…
+    if(dxp>4) {Prob.angspeed = 4.5}
+    else if(dxp<-4) {Prob.angspeed = -4.5}
+    else {flag = true}
+    if(dyp>4) {Prob.speed = 1.8}
+    else if(dyp<-4) {Prob.speed = -1.8}
+    else { if(flag){Prob.angspeed=0} }
+  }
 
-  //   if(dxp>4) {Prob.angspeed = 4}
-  //   else if(dxp<-4) {Prob.angspeed = -4}
-  //   if(dyp>4) {Prob.speed = 1.5}
-  //   else if(dyp<-4) {Prob.speed = -1.5}
-  // }
+  if (myGameArea.keys) {
+    if (myGameArea.keys[38]) { // 前 ↑
+      if (myGameArea.keys[17]) {vy-=20} // ctrl 调视角
+      else {Prob.touch = false; Prob.speed = 1.8;}
+    }
+    if (myGameArea.keys[40]) { // 后 ↓
+      if (myGameArea.keys[17]) {vy+=20}
+      else {Prob.touch = false; Prob.speed = -1.8;}
+    }
 
-  if (myGameArea.keys && (myGameArea.keys[33] || myGameArea.keys[85])) {Prob.angspeed = -8} // 逆转 PgUp 或 U
-  if (myGameArea.keys && (myGameArea.keys[34] || myGameArea.keys[79])) {Prob.angspeed = 8} // 顺转 PgDn 或 O
-  if (myGameArea.keys && (myGameArea.keys[38] || myGameArea.keys[73])) {Prob.speed = 2} // 前 ↑ 或 I
-  if (myGameArea.keys && (myGameArea.keys[40] || myGameArea.keys[75])) {Prob.speed = -2} // 后 ↓ 或 K
-  if (myGameArea.keys && (myGameArea.keys[37] || myGameArea.keys[74])) {Prob.rispeed = -2} // 左滑 ← 或 J
-  if (myGameArea.keys && (myGameArea.keys[39] || myGameArea.keys[76])) {Prob.rispeed = 2} // 右滑 → 或 L
+    if (myGameArea.keys[37]) { // 逆转 ←
+      if (myGameArea.keys[17]) {vx-=20}
+      else {Prob.touch = false; Prob.angspeed -= 1.5;
+      if (Prob.angspeed<-50) {Prob.angspeed=-50}}
+    } else if (myGameArea.keys[39]) { // 顺转 →
+      if (myGameArea.keys[17]) {vx+=20}
+      else {Prob.touch = false; Prob.angspeed += 1.5;
+      if (Prob.angspeed>50) {Prob.angspeed=50}}
+    } else if (!Prob.touch) {
+      Prob.angspeed = 0;
+    }
+  }
   for (n=0;n<5;n++) {
     if (myGameArea.keys && myGameArea.keys[49+n] || Prob.Info.clicked(n)) {Prob.putdown(n)} // 1~5
     if (myGameArea.keys && myGameArea.keys[112+n]) {Prob.fire(n)} // F1~F5
