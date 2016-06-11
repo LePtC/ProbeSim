@@ -116,7 +116,7 @@ var ModCirclit = new Array();
 var ModList = new Array(); // 除 Circlit 以外的 mod 本体
 
 
-var litmax = new Array(200,200,300,350,400,450); // 最远光照半径
+var litmax = new Array(200,150,200,250,300,350); // 最远光照半径
 var lifmax =  new Array(0,150,200,250,300,350); // 生命探测半宽
 var hurt = new Array(20,10,6,3,2,1,0,0); // 护盾减少伤害
 
@@ -383,10 +383,10 @@ function ModCom(wid, type, x, y) {
     for (j=0;j<20;j++) {
       n = nat(this.x-(i-10)*wd,this.y-(j-10)*wd);
       if (iswall(map[n])) {
-        this.modlit[n] = lightlevel(this,Wall[n],70)*(1-iswallinline(this.x,this.y,Wall[n].x,Wall[n].y));
+        this.modlit[n] = lightlevel(this,Wall[n],90)*(1-iswallinline(this.x,this.y,Wall[n].x,Wall[n].y));
       }
       if (map[n]==0) {
-        this.modlit[n] = lightlevel(this,Wall[n],70)*(1-iswallinline(this.x,this.y,Wall[n].x,Wall[n].y));
+        this.modlit[n] = lightlevel(this,Wall[n],90)*(1-iswallinline(this.x,this.y,Wall[n].x,Wall[n].y));
       }
     }}
   }
