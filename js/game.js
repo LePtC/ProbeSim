@@ -120,6 +120,8 @@ var litmax = new Array(200,200,300,350,400,450); // 最远光照半径
 var lifmax =  new Array(0,150,200,250,300,350); // 生命探测半宽
 var hurt = new Array(20,10,6,3,2,1,0,0); // 护盾减少伤害
 
+var diag;
+
 var SDprobemove;
 var SDshoot;
 var SDcreeper;
@@ -151,7 +153,7 @@ function startGame() {
 
   Probe1 = new ProbeCom(15, "#C59D0D", 30, 30);
   Probe1.ang = Math.PI / 2;
-  Probe1.Info = new InfoCom(Probe1, 16, 200);
+  Probe1.Info = new InfoCom(Probe1, stagew+130, 50);
 
   // FoeNull = new ModCom(1, 0, -20, -20);
   FoeList[0] = new FoeCom(6, 1, 500,  30, 0); // FoeShoot1
@@ -172,6 +174,8 @@ function startGame() {
   myGameArea.x = 0; // 解决鼠标开始哪儿都没点的 bug
   myGameArea.y = 0;
   myGameArea.start();
+
+  diag = new DiagCom();
 }
 
 
@@ -179,7 +183,7 @@ function startGame() {
 var myGameArea = {
   canvas : document.createElement("canvas"),
   start : function() {
-    this.canvas.width = stagew; // document.body.clientWidth
+    this.canvas.width = stagew+260; // document.body.clientWidth
     this.canvas.height = stageh;
     this.context = this.canvas.getContext("2d");
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
@@ -461,7 +465,6 @@ function ProbeCom(wid, color, x, y) {
       ctx.fillRect(vx+this.x-w, vy+this.y-w, 1 , 2*w); // 左
       ctx.fillRect(vx+this.x+w, vy+this.y-w, 1 , 2*w); // 右
     }
-    this.Info.update();
   }
   this.newPos = function() {
     this.ang += this.angspeed * Math.PI / 180;
@@ -682,34 +685,52 @@ function newbu(x,y,r,dx,dy) {
 
 function InfoCom(host, x, y) {
   this.host = host;
-  this.x = x+wd*3.5; // 记录的是中心点
-  this.y = y+wd;
+  this.x = x; // 记录的是中心点
+  this.y = y;
   // this.modimg = new Array(); // 作按钮用
   this.update = function() {
     ctx = myGameArea.context;
     ctx.globalAlpha = 1;
-    ctx.fillStyle = "#222";
-    ctx.fillRect(x-15, y-3*wd, wd*9, wd*8);
 
     ctx.fillStyle = host.color;
-    ctx.fillRect(x+host.wid / -2, y+host.wid / -2, host.wid, host.wid);
+    ctx.fillRect(x-95+host.wid / -2, y-40, host.wid*2, host.wid*2);
+    ctx.fillRect(x-60,y-40,100,10);
     ctx.fillStyle = "#0568B7";
-    ctx.fillRect(x+host.wid / -4, y+host.wid / -2  , host.wid/2, host.wid/4);
-
-    ctx.fillStyle = "#fff";
-    ctx.font="20px Verdana";
-    ctx.fillText(host.health.toString(),x+20,y+7);
+    ctx.fillRect(x-95, y-40, host.wid, host.wid/2);
+    // ctx.strokeStyle="#FFF"; // 会导致最后一个 Foe 被画上边缘
+    ctx.fillRect(x-59, y-39, (host.health-1), 8);
+    // ctx.fillStyle = "#fff";
+    ctx.font="18px Verdana";
+    ctx.fillText(host.health.toString(),x-98,y-15);
 
     for (i in host.mod) {
       var img = new Image();
       img.src = imgsrc(host.mod[i]);
-      ctx.drawImage(img,x-8+16*i,y+15,wd+2,wd+2);
+      ctx.drawImage(img,x-100+40*i,y,24,24);
     }
   }
   this.clicked = function(i) {
-    var vec = new vecCom(x-8+16*i+wd/2+1,y+15+wd/2+1);
-    return(crash(vec,wd/2+1,myGameArea,2));
+    var vec = new vecCom(x-100+40*i+12,y+12);
+    return(crash(vec,12,myGameArea,2));
   }
+}
+
+
+
+function DiagCom() {
+  this.update = function() {
+    var fr = myGameArea.frameNo%50;
+    var sec = (myGameArea.frameNo - fr) / 50;
+    var min = (sec - sec%60) / 60;
+    sec = sec % 60;
+    var ctx = myGameArea.context;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#fff";
+    ctx.font="18px Verdana";
+    ctx.fillText(min.toString()+":"+sec.toString()+":"+fr.toString(),stagew+10,stageh-10);
+  }
+  // this.clicked = function(i) { // TODO 暂停,调 fps
+  // }
 }
 
 
@@ -768,6 +789,13 @@ function updateGameArea() {
 
   for (n in BuList) { if (BuList[n] != null) {BuList[n].update()} }
 
+  ctx = myGameArea.context;
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#222";
+  ctx.fillRect(stagew+5, 0, 255, stageh);
+
+  Probe1.Info.update();
+  diag.update();
 }
 
 
@@ -777,7 +805,7 @@ function Control(Prob) {
   Prob.speed = 0;
 
   // myGameArea.touchX && myGameArea.touchY
-  if (myGameArea.x && myGameArea.x<stagew && myGameArea.y<stageh && (!crash(myGameArea,2,Prob.Info,wd*5))) {
+  if (myGameArea.x && myGameArea.x<stagew && myGameArea.y<stageh) {
     Prob.headx = myGameArea.x-vx;
     Prob.heady = myGameArea.y-vy;
     Prob.touch = true;
