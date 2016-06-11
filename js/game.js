@@ -176,6 +176,7 @@ function startGame() {
   myGameArea.start();
 
   diag = new DiagCom();
+  animate();
 }
 
 
@@ -189,7 +190,21 @@ var myGameArea = {
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 20); // 每 20th 毫秒 (50 fps)
+    // this.interval = setInterval(updateGameArea, 20); // 每 20th 毫秒 (50 fps)
+
+/*Provides requestAnimationFrame in a cross browser way.
+  http://paulirish.com/2011/requestanimationframe-for-smart-animating/ */
+if (!window.requestAnimationFrame) {
+  window.requestAnimationFrame = (function() {
+    return window.webkitRequestAnimationFrame ||
+      window.mozRequestAnimationFrame || // comment out if FF4 is slow
+    window.oRequestAnimationFrame ||
+      window.msRequestAnimationFrame ||
+      function( /* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+        window.setTimeout(callback, 20);
+    };
+  })();
+}
 
     this.canvas.style.cursor = "crosshair";
     window.addEventListener('mousedown', function (e) { // mousemove
@@ -227,6 +242,11 @@ var myGameArea = {
   clear : function() {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  updateGameArea();
 }
 
 
@@ -393,7 +413,7 @@ function ProbeCom(wid, color, x, y) {
   this.health = 99;
   this.Info = null;
   this.mod = new Array(ModNull,ModNull,ModNull,ModNull,ModNull); // 一个 Probe 现最多搭载 5 个插件, 以体积增大为惩罚?
-  this.lastfire = -10; // 开火时间有 CD
+  this.lastfire = -6; // 开火时间有 CD
   this.modnum = function(id) {
     var sum = 0;
     for (i=0;i<5;i++) {sum+=(this.mod[i].type==id)}
@@ -415,7 +435,7 @@ function ProbeCom(wid, color, x, y) {
   }
   this.fire = function(i) {
     if (this.mod[i].type == -1) {
-      if (myGameArea.frameNo - this.lastfire > 10) {
+      if (myGameArea.frameNo - this.lastfire > 6) {
         if (this.mod[i].bunum > 0) {
           newbu(this.x,this.y,this.cubewid,Math.sin(this.ang),-Math.cos(this.ang));
           this.mod[i].bunum --;
@@ -718,16 +738,18 @@ function InfoCom(host, x, y) {
 
 
 function DiagCom() {
+  this.timetxt = "";
   this.update = function() {
     var fr = myGameArea.frameNo%50;
     var sec = (myGameArea.frameNo - fr) / 50;
     var min = (sec - sec%60) / 60;
     sec = sec % 60;
+    this.timetxt = min.toString()+":"+sec.toString()+"."+fr.toString();
     var ctx = myGameArea.context;
     ctx.globalAlpha = 1;
     ctx.fillStyle = "#fff";
     ctx.font="18px Verdana";
-    ctx.fillText(min.toString()+":"+sec.toString()+":"+fr.toString(),stagew+10,stageh-10);
+    ctx.fillText(this.timetxt,stagew+10,stageh-10);
   }
   // this.clicked = function(i) { // TODO 暂停,调 fps
   // }
