@@ -794,13 +794,18 @@ function updateGameArea() {
 
   Control(Probe1);
 
-  var flag = Array();
-  for (n in map) { flag[n] = (Wall[n].x+vx>-wd && Wall[n].x+vx<stagew+wd
-      && Wall[n].y+vy>-wd && Wall[n].y+vy<stageh+wd)
-  }
-  for (n in map){ if (flag[n]) {Wall[n].preupdate()} }
-  for (n in map){ if (flag[n]) {Wall[n].update()} }
-  for (n in map){ if (flag[n]) {Wall[n].pstupdate()} }
+  var i1,i2,j1,j2,i,j;
+  i1 = Math.ceil(-vy/wd);
+  if (i1<0) {i1=0}
+  if (i1>(fullh-stageh)/wd) {i1=(fullh-stageh)/wd}
+  i2 = i1 + stageh/wd;
+  j1 = Math.ceil(-vx/wd);
+  if (j1<0) {j1=0}
+  if (j1>(fullw-stagew)/wd) {j1=(fullw-stagew)/wd}
+  j2 = j1 + stagew/wd;
+  for (i=i1;i<i2;i++) {for (j=j1;j<j2;j++) {Wall[i*iwd+j].preupdate()}}
+  for (i=i1;i<i2;i++) {for (j=j1;j<j2;j++) {Wall[i*iwd+j].update()}}
+  for (i=i1;i<i2;i++) {for (j=j1;j<j2;j++) {Wall[i*iwd+j].pstupdate()}}
 
   for (n in ModCirclit) {ModCirclit[n].update()}
   for (n in ModList) {ModList[n].update()}
@@ -896,12 +901,14 @@ function Control(Prob) {
 
 function lightlevel(source,target,max) {
 // return 1 // debug 用
-  var ang = source.ang; // source 必须是 Probe (或 ModCirclit)
   var dx = target.x-source.x;
+  if (dx>=max || dx<=-max) {return 0} // 提前 return 以节约计算量
   var dy = target.y-source.y;
+  if (dy>=max || dy<=-max) {return 0}
   var r = getr(dx,dy);
-  if (r>=max) {return 0} // 提前 return 以节约计算量
+  if (r>=max) {return 0}
   var slant = 1;
+  var ang = source.ang; // source 必须是 Probe (或 ModCirclit)
   if (ang != "A") { if (source.modnum(1)==0) {
     slant = dot(-Math.sin(ang),Math.cos(ang),dx,dy,r);
     slant = Math.pow(0.5*(1-slant),3);

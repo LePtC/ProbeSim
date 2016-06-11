@@ -343,6 +343,11 @@ Hamper 有接触伤害（待加音效）
 
 Chrome 的 fps 比 Firefox 高，感觉可以流畅玩（所以是 Firefox 的问题咯？）
 
+###2016.06.11.v3
+
+进一步节约计算量，原来最大的计算量是在算每块砖和 Probe 的距离上，现在 Firefox 上也能较流畅地玩了
+
+
 
 ###Bug
 
@@ -356,6 +361,7 @@ Creeper 自爆的话就不要掉落 Mod
 
 Modlit 的光影还没给墙补光
 
+触控下点哪都 drop mod
 
 
 ###TODO
