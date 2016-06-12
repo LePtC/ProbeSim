@@ -101,15 +101,18 @@ var WallType = new Array("white","green","#0094FF"); // 0 地板 1 墙 2 母舰�
 
 var Probe1;
 
-var FoeType = new Array("#fff","#222","red","green"); // 1 Shooter 2 Creeper 3 Hamper
+var FoeType = new Array("#fff","#222","red","green");
+var FoeTypeTxt = new Array("空","小黑","大红","小绿");
 var FoeSpeed = new Array(0,0.6,1.5,1.6);
 var FoeList =  new Array(); // 记录敌人本体
 // var FoeNull;
 var BuList = new Array(); // 记录子弹对象
-var FdropImg = new Array("img/0.png","img/ModBull4.png","img/ModTrap.png","img/ModHeal.png"); // 敌人死亡掉落 -1 子弹 -2 陷阱 -3 治疗
+var FdropImg = new Array("img/0.png","img/ModBull4.png","img/ModTrap.png","img/ModHeal.png"); // 敌人死亡掉落
+var FdropTxt = new Array("空","子弹","陷阱","治疗");
 
 var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png","img/ModShield.png");
-// 静态插件 1 环形照明 2 生命探测 3 黑客系统 4 护盾 9 母舰芯片
+var ModTxt = new Array("空","环照","动感","黑客","护盾");
+// 9 母舰芯片
 var BulImg = new Array("img/0.png","img/ModBull.png","img/ModBull2.png","img/ModBull3.png","img/ModBull4.png"); // 子弹数
 var ModNull; // 我需要一个空对象
 var ModCirclit = new Array();
@@ -121,6 +124,7 @@ var lifmax =  new Array(0,150,200,250,300,350); // 生命探测半宽
 var hurt = new Array(20,10,6,3,2,1,0,0); // 护盾减少伤害
 
 var diag;
+var diaDiv;
 
 var SDprobemove;
 var SDshoot;
@@ -135,18 +139,18 @@ function startGame() {
 
   ModNull = new ModCom(wd+2, 0, -20, -20);
   // 母舰光,干脆用吃不到的 LitMod 代替吧
-  ModCirclit[0] = new ModCom(wd+2, 1, 42, 90);
-  ModCirclit[1] = new ModCom(wd+2, 1, 622, 64);
+  ModCirclit[0] = new ModCom(wd+2, 1, 52, 110);
+  ModCirclit[1] = new ModCom(wd+2, 1, 622, 69);
   ModCirclit[2] = new ModCom(wd+2, 1, 320, 322);
   ModCirclit[3] = new ModCom(wd+2, 1, 622, 550);
-  ModCirclit[4] = new ModCom(wd+2, 1, 324, 46);
+  ModCirclit[4] = new ModCom(wd+2, 1, 324, 56);
   ModList[0] = new ModCom(wd+2, 2, 172, 32); // ModLifesen1
   ModList[1] = new ModCom(wd+2, 2, 214, 30); // ModLifesen2
   ModList[2] = new ModCom(wd+2, 2, 470, 234); // ModLifesen3
   ModList[3] = new ModCom(wd+2, 3, 674, 572); // ModHacker
   ModList[4] = new ModCom(wd+2, 4, 62, 60); // ModShield
-  ModList[5] = new ModCom(wd+2, 4, 670, 62); // ModShield
-  ModList[6] = new ModCom(wd+2, 4, 302, 300); // ModShield
+  ModList[5] = new ModCom(wd+2, 4, 670, 68); // ModShield
+  ModList[6] = new ModCom(wd+2, 4, 302, 307); // ModShield
   ModList[7] = new ModCom(wd+2, -1, 202, 130); // ModBull
   ModList[8] = new ModCom(wd+2, -1, 62, 230);
 
@@ -178,6 +182,9 @@ function startGame() {
 
   diag = new DiagCom();
   animate();
+  diaDiv = document.getElementById("dialogue");
+  dia("javascript 已加载");
+  dia("按[h]显示操作帮助");
 }
 
 
@@ -359,6 +366,7 @@ function ModCom(wid, type, x, y) {
       if (empty>=0) {
         if (this.crashWith(Probe1)) {
           Probe1.mod[empty] = this; // 将本实体放入 Probe 的插槽
+          dia("小探获得一个"+txtsrc(this),"#209AF8");
           this.exist = empty;
           if (type==1) {for (n in map) {this.modlit[n]=0}}
         }
@@ -432,6 +440,7 @@ function ProbeCom(wid, color, x, y) {
       this.mod[i].y = this.y;
       this.mod[i].wait = true;
       if (this.mod[i].type == 1) {this.mod[i].updatelit()}
+      dia("小探丢掉一个"+txtsrc(this.mod[i]),"#209AF8");
       this.mod[i] = ModNull;
     }
   }
@@ -440,6 +449,7 @@ function ProbeCom(wid, color, x, y) {
       if (myGameArea.frameNo - this.lastfire > 6) {
         if (this.mod[i].bunum > 0) {
           newbu(this.x,this.y,this.cubewid,Math.sin(this.ang),-Math.cos(this.ang));
+          dia("小探射出一发子弹","hotpink");
           this.mod[i].bunum --;
           if (this.mod[i].bunum <= 0) {
             this.mod[i].exist = -2;
@@ -527,6 +537,7 @@ function ProbeCom(wid, color, x, y) {
     this.x = x;
     this.y = y;
     this.ang = Math.PI/2;
+    dia("小探被干掉啦, 回到出生点","red");
     this.health = 99;
     vx = 0;
     vy = 0;
@@ -571,13 +582,14 @@ function FoeCom(radius, type, x, y, exist) {
       if (myGameArea.frameNo == this.bombframe) {
         SDexplode.play();
         this.dead();
-        var r2 = getr2(this.x-Probe1.x,this.y-Probe1.y);
+        var r = getr(this.x-Probe1.x,this.y-Probe1.y)/wd;
         var h = hurt[Probe1.modnum(4)];
-        if (r2 < 100*wd*wd) {Probe1.health -= h}
-        if (r2 < 64*wd*wd) {Probe1.health -= h}
-        if (r2 < 36*wd*wd) {Probe1.health -= h}
-        if (r2 < 16*wd*wd) {Probe1.health -= h}
-        if (r2 < 4*wd*wd) {Probe1.health -= h}
+        if (r < 10) {Probe1.health -= h}
+        if (r < 8) {Probe1.health -= h}
+        if (r < 6) {Probe1.health -= h}
+        if (r < 4) {Probe1.health -= h}
+        if (r < 2) {Probe1.health -= h}
+        dia("一只大红在 "+Math.ceil(r).toString()+" 格外爆炸","red");
       }
       return(0);
     }
@@ -624,7 +636,10 @@ function FoeCom(radius, type, x, y, exist) {
     }
     // Probe 和敌人互怼检测
     if (touch(Probe1,this)) {
-      if (this.type == 3 && myGameArea.frameNo % 25 == 0) {Probe1.health -= hurt[Probe1.modnum(4)+2]}
+      if (this.type == 3 && myGameArea.frameNo % 25 == 0) {
+        Probe1.health -= hurt[Probe1.modnum(4)+2];
+        dia("小探受到小绿的伤害","red");
+      }
       Probe1.crashWith(this);
       this.crashWith(Probe1);
     }
@@ -641,6 +656,7 @@ function FoeCom(radius, type, x, y, exist) {
   }
   this.dead = function(other) {
     ModList[ModList.length] = new ModCom(wd+2, -this.type, this.x, this.y);
+    // dia("一个 "+FoeTypeTxt[this.type]+" 被干掉啦","green");
     // this.x = -20; this.y = -20;
     this.type = 0;
     // FoeList[this.exist] = FoeNull;
@@ -670,6 +686,7 @@ function BuCom(x, y, dx, dy, index) {
     // 子弹击中 Probe 检测
     if (crash(this,2,Probe1,Probe1.wid/2)) {
       Probe1.health -= hurt[Probe1.modnum(4)];
+      dia("小探中了一发子弹","red");
       BuList[index] = null;
       return 0; // 提前结束函数
     }
@@ -678,6 +695,7 @@ function BuCom(x, y, dx, dy, index) {
       var f = FoeList[n];
       if (f.type != 0) {
         if (crash(this,2,f,f.r)) {
+          dia("一只"+FoeTypeTxt[f.type]+"被子弹消灭","green");
           f.dead();
           BuList[index] = null;
           return 0;
@@ -748,10 +766,10 @@ function DiagCom() {
   this.update = function() {
     var fr = myGameArea.frameNo%25;
     var sec = (myGameArea.frameNo - fr) / 25;
-    fr = fr*4;
+    // fr = fr*4;
     var min = (sec - sec%60) / 60;
     sec = sec % 60;
-    this.timetxt = min.toString()+":"+sec.toString()+"."+fr.toString();
+    this.timetxt = min.toString()+":"+sec.toString(); // +"."+fr.toString();
     var ctx = myGameArea.context;
     ctx.globalAlpha = 1;
     ctx.fillStyle = "#fff";
@@ -826,7 +844,7 @@ function updateGameArea() {
   ctx = myGameArea.context;
   ctx.globalAlpha = 1;
   ctx.fillStyle = "#222";
-  ctx.fillRect(stagew+5, 0, 255, stageh);
+  ctx.fillRect(stagew, 0, 260, stageh);
 
   Probe1.Info.update();
   diag.update();
@@ -894,10 +912,20 @@ function Control(Prob) {
 
   if (myGameArea.keys && myGameArea.keys[32]) {
     if (myGameArea.frameNo - Prob.lastfire > 6) {
+      if (Prob.fight) {dia("小探切换为探索模式","#209AF8")}
+      else {dia("小探切换为战斗模式","hotpink")}
       Prob.fight = !Prob.fight;
       Prob.lastfire = myGameArea.frameNo;
     }
   }
+
+  if (myGameArea.keys && myGameArea.keys[72]) {
+    if (myGameArea.frameNo - Prob.lastfire > 6) {
+      dia("\<操作帮助\> ----------</p><p>[↑] 前进 [↓] 后退</p><p>[←] 逆转 [→] 顺转</p><p>[空格] 切换探索/战斗模式</p><p>[数字键1~5] 探索模式下为扔下插件, 战斗模式下为使用插件","#C59D0D");
+      Prob.lastfire = myGameArea.frameNo;
+    }
+  }
+// </p><p>\<鼠标党\> ----------</p><p>单击地图某点, Probe 会自动向该点前进</p><p>单击右侧插件图标可扔下或使用
 
   if(Prob.speed != 0 || Prob.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
 
@@ -1031,3 +1059,21 @@ function imgsrc(mod) {
   if (mod.type==-1) {return BulImg[mod.bunum]}
   if (mod.type<-1) {return FdropImg[-mod.type]}
 }
+
+function txtsrc(mod) {
+  if (mod.type>=0) {return (ModTxt[mod.type]+"插件")}
+  if (mod.type==-1) {return (" "+mod.bunum.toString()+" 发子弹")}
+  if (mod.type<-1) {return (FdropTxt[-mod.type]+"插件")}
+}
+
+
+
+function dia(txt,color) {
+  if (typeof color === "undefined") {diaDiv.innerHTML += "<p>("+diag.timetxt+") "+txt+"</p>"}
+  else {diaDiv.innerHTML += "<div style='color:"+color+"'><p>("+diag.timetxt+") "+txt+"</p>"}
+  diaDiv.scrollTop = diaDiv.scrollHeight;
+}
+
+
+
+

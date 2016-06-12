@@ -5,8 +5,27 @@ body {
 }
 canvas {
   position:absolute;
-  left:0%;
-  top:0%;
+  left:0;
+  top:0;
   border:1px solid #d3d3d3;
   background-color: #000;
+}
+#dialogue {
+  position:fixed;
+  left:605px;
+  top:180px;
+  width:250px;
+  height:210px;
+  background-color:#111;
+  z-index:99;
+  color:#fff;
+  font-size:0.8em;
+  /* line-height:1; */
+  overflow-y:scroll;
+  word-break:break-all;
+}
+
+#dialogue p {
+  padding:0;
+  margin:3px;
 }
