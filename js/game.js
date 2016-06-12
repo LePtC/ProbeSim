@@ -402,6 +402,7 @@ function ProbeCom(wid, color, x, y) {
 
   this.wid = wid;
   this.cubewid = wid;
+  this.color = color;
   this.speed = 0; // 前进速度
   this.ang = 0;
   this.angspeed = 0;
@@ -410,7 +411,7 @@ function ProbeCom(wid, color, x, y) {
   this.headx = x; // 每个 probe 有不同的目的地
   this.heady = y;
   this.touch = false; // 触控还是键盘
-  this.color = color;
+  this.fight = false; // 探索还是战斗
   this.health = 99;
   this.Info = null;
   this.mod = new Array(ModNull,ModNull,ModNull,ModNull,ModNull); // 一个 Probe 现最多搭载 5 个插件, 以体积增大为惩罚?
@@ -474,7 +475,8 @@ function ProbeCom(wid, color, x, y) {
     ctx.fillStyle = color;
     ctx.globalAlpha = 1;
     ctx.fillRect(this.wid / -2, this.wid / -2, this.wid, this.wid);
-    ctx.fillStyle = "#0568B7";
+    if (this.fight) {ctx.fillStyle = "red"}
+    else {ctx.fillStyle = "#0568B7"}
     ctx.fillRect(this.wid / -4, this.wid / -2  , this.wid/2, this.wid/4);
     ctx.restore();
     if (this.modnum(2)>0) { // 生命探测范围指示
@@ -716,11 +718,11 @@ function InfoCom(host, x, y) {
     ctx.fillStyle = host.color;
     ctx.fillRect(x-95+host.wid / -2, y-40, host.wid*2, host.wid*2);
     ctx.fillRect(x-60,y-40,100,10);
-    ctx.fillStyle = "#0568B7";
+    if (host.fight) {ctx.fillStyle = "red"}
+    else {ctx.fillStyle = "#0568B7"}
     ctx.fillRect(x-95, y-40, host.wid, host.wid/2);
     // ctx.strokeStyle="#FFF"; // 会导致最后一个 Foe 被画上边缘
     ctx.fillRect(x-59, y-39, (host.health-1), 8);
-    // ctx.fillStyle = "#fff";
     ctx.font="18px Verdana";
     ctx.fillText(host.health.toString(),x-98,y-15);
 
@@ -729,6 +731,9 @@ function InfoCom(host, x, y) {
       img.src = imgsrc(host.mod[i]);
       ctx.drawImage(img,x-100+40*i,y,24,24);
     }
+    ctx.fillStyle = "#fff";
+    ctx.font="15px Verdana";
+    ctx.fillText("1      2      3      4      5",x-92,y+38);
   }
   this.clicked = function(i) {
     var vec = new vecCom(x-100+40*i+12,y+12);
@@ -880,11 +885,17 @@ function Control(Prob) {
   if (Prob.x>stagew/2 && Prob.x<fullw-stagew/2) {vx=stagew/2-Math.floor(Prob.x)}
   if (Prob.y>stageh/2 && Prob.y<fullh-stageh/2) {vy=stageh/2-Math.floor(Prob.y)}
 
-  for (n=0;n<5;n++) {
-    if (Prob.Info.clicked(n)) {Prob.putdown(n)}
-    if (myGameArea.keys && myGameArea.keys[49+n]) {
-      if (myGameArea.keys[32]) {Prob.fire(n)} // 1~5, fire 加空格键
+  for (n=0;n<5;n++) { // 1~5, 空格键切换到 fire 模式
+    if (myGameArea.keys && myGameArea.keys[49+n] || Prob.Info.clicked(n)) {
+      if (Prob.fight) {Prob.fire(n)}
       else {Prob.putdown(n)}
+    }
+  }
+
+  if (myGameArea.keys && myGameArea.keys[32]) {
+    if (myGameArea.frameNo - Prob.lastfire > 6) {
+      Prob.fight = !Prob.fight;
+      Prob.lastfire = myGameArea.frameNo;
     }
   }
 
