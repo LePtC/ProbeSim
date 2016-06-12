@@ -102,7 +102,7 @@ var WallType = new Array("white","green","#0094FF"); // 0 地板 1 墙 2 母舰�
 var Probe1;
 
 var FoeType = new Array("#fff","#111","red","green");
-var FoeTypeTxt = new Array("空","小黑","大红","小绿");
+var FoeTypeTxt = new Array("空","小黑","大红","小菜");
 var FoeR = new Array(0,6,7,5);
 var FoeSpeed = new Array(0,0.6,1.5,1.6);
 var FoeList =  new Array(); // 记录敌人本体
@@ -653,7 +653,7 @@ function FoeCom(type, x, y, exist) {
     if (touch(Probe1,this)) {
       if (this.type == 3 && myGameArea.frameNo % 25 == 0) {
         Probe1.health -= hurt[Probe1.modnum(4)+2];
-        dia("小探受到小绿的伤害","red");
+        dia("小探受到小菜的伤害","red");
       }
       Probe1.crashWith(this);
       this.crashWith(Probe1);
