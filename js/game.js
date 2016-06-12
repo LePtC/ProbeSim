@@ -101,8 +101,9 @@ var WallType = new Array("white","green","#0094FF"); // 0 地板 1 墙 2 母舰�
 
 var Probe1;
 
-var FoeType = new Array("#fff","#222","red","green");
+var FoeType = new Array("#fff","#111","red","green");
 var FoeTypeTxt = new Array("空","小黑","大红","小绿");
+var FoeR = new Array(0,6,7,5);
 var FoeSpeed = new Array(0,0.6,1.5,1.6);
 var FoeList =  new Array(); // 记录敌人本体
 // var FoeNull;
@@ -111,7 +112,7 @@ var FdropImg = new Array("img/0.png","img/ModBull4.png","img/ModTrap.png","img/M
 var FdropTxt = new Array("空","子弹","陷阱","治疗");
 
 var ModImg = new Array("img/0.png","img/ModCirclit.png","img/ModLifesen.png","img/ModHacker.png","img/ModShield.png");
-var ModTxt = new Array("空","环照","动感","黑客","护盾");
+var ModTxt = new Array("空","照明","动感","黑客","护盾");
 // 9 母舰芯片
 var BulImg = new Array("img/0.png","img/ModBull.png","img/ModBull2.png","img/ModBull3.png","img/ModBull4.png"); // 子弹数
 var ModNull; // 我需要一个空对象
@@ -161,15 +162,15 @@ function startGame() {
   Probe1.Info = new InfoCom(Probe1, stagew+130, 50);
 
   // FoeNull = new ModCom(1, 0, -20, -20);
-  FoeList[0] = new FoeCom(6, 1, 500,  30, 0); // FoeShoot1
-  FoeList[1] = new FoeCom(6, 1, 500, 100, 1); // FoeShoot2
-  FoeList[2] = new FoeCom(7, 2, 500, 500, 2); // FoeCreep
-  FoeList[3] = new FoeCom(5, 3, 310, 300, 3); // FoeHampe1
-  FoeList[4] = new FoeCom(5, 3, 320, 300, 4); // FoeHampe2
-  FoeList[5] = new FoeCom(5, 3, 310, 310, 5); // FoeHampe3
-  FoeList[6] = new FoeCom(6, 1, 500, 500, 6);
-  FoeList[7] = new FoeCom(7, 2, 200, 550, 7);
-  FoeList[8] = new FoeCom(5, 3, 500, 100, 8);
+  FoeList[0] = new FoeCom(1, 500,  30, 0); // FoeShoot1
+  FoeList[1] = new FoeCom(1, 500, 100, 1); // FoeShoot2
+  FoeList[2] = new FoeCom(2, 500, 500, 2); // FoeCreep
+  FoeList[3] = new FoeCom(3, 310, 300, 3); // FoeHampe1
+  FoeList[4] = new FoeCom(3, 320, 300, 4); // FoeHampe2
+  FoeList[5] = new FoeCom(3, 310, 310, 5); // FoeHampe3
+  FoeList[6] = new FoeCom(1, 500, 500, 6);
+  FoeList[7] = new FoeCom(2, 200, 550, 7);
+  FoeList[8] = new FoeCom(3, 500, 100, 8);
 
   SDprobemove = new Sound("sound/probemove.wav");
   SDshoot = new Sound("sound/shoot.wav");
@@ -184,7 +185,7 @@ function startGame() {
   animate();
   diaDiv = document.getElementById("dialogue");
   dia("javascript 已加载");
-  dia("按[h]显示操作帮助");
+  dia("按[h]显示操作帮助","#C59D0D");
 }
 
 
@@ -366,7 +367,7 @@ function ModCom(wid, type, x, y) {
       if (empty>=0) {
         if (this.crashWith(Probe1)) {
           Probe1.mod[empty] = this; // 将本实体放入 Probe 的插槽
-          dia("小探获得一个"+txtsrc(this),"#209AF8");
+          dia("小探获得了"+txtsrc(this),"#209AF8");
           this.exist = empty;
           if (type==1) {for (n in map) {this.modlit[n]=0}}
         }
@@ -440,7 +441,7 @@ function ProbeCom(wid, color, x, y) {
       this.mod[i].y = this.y;
       this.mod[i].wait = true;
       if (this.mod[i].type == 1) {this.mod[i].updatelit()}
-      dia("小探丢掉一个"+txtsrc(this.mod[i]),"#209AF8");
+      dia("小探丢掉了"+txtsrc(this.mod[i]),"#209AF8");
       this.mod[i] = ModNull;
     }
   }
@@ -474,6 +475,7 @@ function ProbeCom(wid, color, x, y) {
       while (this.mod[i].type!=-3) {i++}
       this.mod[i].exist = -2;
       this.mod[i] = ModNull;
+      dia("小探消耗了一个治疗插件","hotpink");
     }
     if (this.health<0) {this.reBirth()}
     this.newPos();
@@ -546,10 +548,10 @@ function ProbeCom(wid, color, x, y) {
 
 
 
-function FoeCom(radius, type, x, y, exist) {
+function FoeCom(type, x, y, exist) {
 
   this.exist = exist; // 012 表示在 FoeList 中的 index
-  this.r = radius;
+  this.r = FoeR[type];
   this.x = x;
   this.y = y;
   this.type = type;
@@ -763,10 +765,11 @@ function InfoCom(host, x, y) {
 
 function DiagCom() {
   this.timetxt = "";
+  this.foecount = new Array(0,0,0,0);
   this.update = function() {
     var fr = myGameArea.frameNo%25;
     var sec = (myGameArea.frameNo - fr) / 25;
-    // fr = fr*4;
+    fr = fr*4;
     var min = (sec - sec%60) / 60;
     sec = sec % 60;
     this.timetxt = min.toString()+":"+sec.toString(); // +"."+fr.toString();
@@ -774,7 +777,19 @@ function DiagCom() {
     ctx.globalAlpha = 1;
     ctx.fillStyle = "#fff";
     ctx.font="18px Verdana";
-    ctx.fillText(this.timetxt,stagew+10,stageh-10);
+    ctx.fillText(this.timetxt+"."+fr.toString(),stagew+10,stageh-10);
+
+    for (n in this.foecount) {this.foecount[n]=0}
+    for (n in FoeList) {this.foecount[FoeList[n].type]++}
+    for (n=1;n<=3;n++) {
+      ctx.fillText(this.foecount[n].toString(),stagew+70+55*n,stageh-10);
+    }
+    for (n=1;n<=3;n++) {
+      ctx.beginPath();
+      ctx.arc(stagew+55+55*n, stageh-15, FoeR[n], 0, 2*Math.PI, false);
+      ctx.fillStyle = FoeType[n];
+      ctx.fill();
+    }
   }
   // this.clicked = function(i) { // TODO 暂停,调 fps
   // }
