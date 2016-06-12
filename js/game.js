@@ -132,6 +132,8 @@ var SDshoot;
 var SDcreeper;
 var SDexplode;
 
+var lastdia = -50; // 消息间隔 2 秒
+var isPaused = false;
 
 
 function startGame() {
@@ -254,8 +256,19 @@ if (!window.requestAnimationFrame) {
 }
 
 function animate() {
+  if (!isPaused) {
+    updateGameArea();
+  }
   requestAnimationFrame(animate);
-  updateGameArea();
+
+  window.onkeydown = function() {
+    if (isPaused) {isPaused = false} // 任何键均可恢复
+  };
+  if (myGameArea.keys && myGameArea.keys[27]) { // ESC 暂停
+    isPaused = true;
+    lastdia = myGameArea.frameNo;
+  }
+
 }
 
 
@@ -834,6 +847,14 @@ function updateGameArea() {
 
   Control(Probe1);
 
+  if (myGameArea.keys && myGameArea.keys[72]) {
+    if (myGameArea.frameNo - lastdia > 25) {
+      dia("《键盘党操作帮助》-----</p><p>[↑][↓] 前/后 [←][→] 转向</p><p>[空格] 切换探索/战斗模式</p><p>[数字键 1~5] 探索模式下为扔下插件, 战斗模式下为使用插件</p><p>[Esc] 暂停, 任意键恢复","#C59D0D");
+      lastdia = myGameArea.frameNo;
+    }
+  }
+// </p><p>\<鼠标党\> ----------</p><p>单击地图某点, Probe 会自动向该点前进</p><p>单击右侧插件图标可扔下或使用
+
   var i1,i2,j1,j2,i,j;
   i1 = Math.ceil(-vy/wd);
   if (i1<0) {i1=0}
@@ -933,14 +954,6 @@ function Control(Prob) {
       Prob.lastfire = myGameArea.frameNo;
     }
   }
-
-  if (myGameArea.keys && myGameArea.keys[72]) {
-    if (myGameArea.frameNo - Prob.lastfire > 6) {
-      dia("\<操作帮助\> ----------</p><p>[↑] 前进 [↓] 后退</p><p>[←] 逆转 [→] 顺转</p><p>[空格] 切换探索/战斗模式</p><p>[数字键1~5] 探索模式下为扔下插件, 战斗模式下为使用插件","#C59D0D");
-      Prob.lastfire = myGameArea.frameNo;
-    }
-  }
-// </p><p>\<鼠标党\> ----------</p><p>单击地图某点, Probe 会自动向该点前进</p><p>单击右侧插件图标可扔下或使用
 
   if(Prob.speed != 0 || Prob.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
 
