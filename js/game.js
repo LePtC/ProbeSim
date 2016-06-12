@@ -147,7 +147,8 @@ function startGame() {
   ModList[4] = new ModCom(wd+2, 4, 62, 60); // ModShield
   ModList[5] = new ModCom(wd+2, 4, 670, 62); // ModShield
   ModList[6] = new ModCom(wd+2, 4, 302, 300); // ModShield
-  ModList[6] = new ModCom(wd+2, -1, 202, 130); // ModBull
+  ModList[7] = new ModCom(wd+2, -1, 202, 130); // ModBull
+  ModList[8] = new ModCom(wd+2, -1, 62, 230);
 
   for (n in ModCirclit) {ModCirclit[n].updatelit()}
 
@@ -201,7 +202,7 @@ if (!window.requestAnimationFrame) {
     window.oRequestAnimationFrame ||
       window.msRequestAnimationFrame ||
       function( /* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
-        window.setTimeout(callback, 20);
+        window.setTimeout(callback, 40); // 25 fps 可以了
     };
   })();
 }
@@ -740,8 +741,9 @@ function InfoCom(host, x, y) {
 function DiagCom() {
   this.timetxt = "";
   this.update = function() {
-    var fr = myGameArea.frameNo%50;
-    var sec = (myGameArea.frameNo - fr) / 50;
+    var fr = myGameArea.frameNo%25;
+    var sec = (myGameArea.frameNo - fr) / 25;
+    fr = fr*4;
     var min = (sec - sec%60) / 60;
     sec = sec % 60;
     this.timetxt = min.toString()+":"+sec.toString()+"."+fr.toString();
@@ -879,8 +881,11 @@ function Control(Prob) {
   if (Prob.y>stageh/2 && Prob.y<fullh-stageh/2) {vy=stageh/2-Math.floor(Prob.y)}
 
   for (n=0;n<5;n++) {
-    if (myGameArea.keys && myGameArea.keys[49+n] || Prob.Info.clicked(n)) {Prob.putdown(n)} // 1~5
-    if (myGameArea.keys && myGameArea.keys[112+n]) {Prob.fire(n)} // F1~F5
+    if (Prob.Info.clicked(n)) {Prob.putdown(n)}
+    if (myGameArea.keys && myGameArea.keys[49+n]) {
+      if (myGameArea.keys[32]) {Prob.fire(n)} // 1~5, fire 加空格键
+      else {Prob.putdown(n)}
+    }
   }
 
   if(Prob.speed != 0 || Prob.angspeed != 0) {SDprobemove.play()} else {SDprobemove.stop()}
