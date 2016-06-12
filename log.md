@@ -345,7 +345,11 @@ Chrome 的 fps 比 Firefox 高，感觉可以流畅玩（所以是 Firefox 的�
 
 ###2016.06.11.v3
 
-进一步节约计算量，原来最大的计算量是在算每块砖和 Probe 的距离上，现在 Firefox 上也能较流畅地玩了
+进一步节约计算量，原来耗计算量的地方是在算每块砖和 Probe 的距离上，现在 Firefox 上也能较流畅地玩了
+
+###2016.06.12.v1
+
+Modlit 的光影沿用旧版以给墙补光
 
 
 
@@ -358,8 +362,6 @@ Chrome 的 fps 比 Firefox 高，感觉可以流畅玩（所以是 Firefox 的�
 3 个 Hamper 居然能把 Probe 挤到穿墙…
 
 Creeper 自爆的话就不要掉落 Mod
-
-Modlit 的光影还没给墙补光
 
 触控下点哪都 drop mod
 
