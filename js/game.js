@@ -102,7 +102,7 @@ var WallType = new Array("white","green","#0094FF"); // 0 地板 1 墙 2 母舰�
 var Probe1;
 
 var FoeType = new Array("#fff","#111","red","green");
-var FoeTypeTxt = new Array("空","小黑","大红","小菜");
+var FoeTypeTxt = new Array("空","小黑","大红","绿豆");
 var FoeR = new Array(0,6,7,5);
 var FoeSpeed = new Array(0,0.6,1.5,1.6);
 var FoeList =  new Array(); // 记录敌人本体
