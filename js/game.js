@@ -653,7 +653,7 @@ function FoeCom(type, x, y, exist) {
     if (touch(Probe1,this)) {
       if (this.type == 3 && myGameArea.frameNo % 25 == 0) {
         Probe1.health -= hurt[Probe1.modnum(4)+2];
-        dia("小探受到小菜的伤害","red");
+        dia("小探受到绿豆的伤害","red");
       }
       Probe1.crashWith(this);
       this.crashWith(Probe1);
